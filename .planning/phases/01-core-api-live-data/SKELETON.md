@@ -37,11 +37,11 @@ The generic skeleton template expects scaffold + routing + one real DB read/writ
 
 ## Stack Touched in Phase 1
 
-- [ ] Project scaffold — pnpm workspaces, Vite, Vitest, exact-pinned installs behind one blocking package-legitimacy verify
-- [ ] Routing — at least one real route: `GET /api/assess` + `GET /api/health` (Hono)
-- [ ] Database — **adapted (ADR-0002): no database.** One real live upstream read per section (Open-Air Quality, Open-Meteo Forecast, OpenAQ) behind the per-section TTL cache + stale-while-error ≤ 3 h
-- [ ] UI — debug-grade plain-text verdict render in `apps/web` wired to `/api/assess` via the Vite proxy, computing the verdict with `@breeze/core` in the browser
-- [ ] Deployment — deferred to Phase 3; Phase-1 proof is the documented local full-stack run: `pnpm dev` + `pnpm smoke`
+- [x] Project scaffold — pnpm workspaces, Vite, Vitest, exact-pinned installs behind one blocking package-legitimacy verify
+- [x] Routing — at least one real route: `GET /api/assess` + `GET /api/health` (Hono)
+- [x] Database — **adapted (ADR-0002): no database.** One real live upstream read per section (Open-Air Quality, Open-Meteo Forecast, OpenAQ) behind the per-section TTL cache + stale-while-error ≤ 3 h
+- [x] UI — debug-grade plain-text verdict render in `apps/web` wired to `/api/assess` via the Vite proxy, computing the verdict with `@breeze/core` in the browser
+- [x] Deployment — deferred to Phase 3; Phase-1 proof is the documented local full-stack run: `pnpm dev` + `pnpm smoke`
 
 ## Out of Scope (Deferred to Later Slices)
 
