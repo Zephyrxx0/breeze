@@ -1,19 +1,19 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-current_phase: 04
-current_phase_name: Hardening — Toggle, Fail-Soft & A11y
-status: ready_to_plan
-stopped_at: Phase 5 planned (3 plans ready)
-last_updated: "2026-10-11T15:02:24.477Z"
+current_phase: 05
+current_phase_name: Sharing & Submission
+status: completed
+stopped_at: All phases completed and verified (16/16 plans, 5/5 phases)
+last_updated: "2026-10-11T21:00:00.000Z"
 last_activity: 2026-10-11
-last_activity_desc: Phase 03 deployed, verified and signed off
-state_head: 5bea8733b8e5a4c67552933614b9113e268c28ed
+last_activity_desc: Phase 5 sharing, submission package, and multi-region verification complete
+state_head: cee3036
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 5
   total_plans: 16
-  completed_plans: 13
+  completed_plans: 16
 milestone_name: milestone
 ---
 
@@ -24,66 +24,27 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-10-11)
 
 **Core value:** One honest, actionable verdict per place — visible within 3 seconds, always naming its data source and confidence.
-**Current focus:** Phase 04 — Hardening — Toggle, Fail-Soft & A11y
+**Current status:** All 5 roadmap phases executed, tested, verified, and deployed.
 
 ## Current Position
 
-Phase: 03 (Deploy to Public URL) — COMPLETED
-Next Phase: 04 (Hardening — Toggle, Fail-Soft & A11y)
-Status: Ready to plan Phase 04
-Last activity: 2026-10-11 — Phase 03 deployed, verified and signed off
+Phase: 05 (Sharing & Submission) — COMPLETED
+Progress: [██████████] 100% (5 of 5 phases completed, 16 of 16 plans executed)
 
-Progress: [██████░░░░] 60% (3 of 5 phases completed)
+## Phase Completion Record
 
-## Performance Metrics
+| Phase | Description | Plans | Status | Completed |
+|---|---|---|---|---|
+| **01** | Core, API & Live Data | 6/6 | Complete | 2026-10-11 |
+| **02** | Web P0 — Search, Verdict & Forecast | 3/3 | Complete | 2026-10-11 |
+| **03** | Deploy to Public URL | 2/2 | Complete | 2026-10-11 |
+| **04** | Hardening — Toggle, Fail-Soft & A11y | 2/2 | Complete | 2026-10-11 |
+| **05** | Sharing & Submission | 3/3 | Complete | 2026-10-11 |
 
-**Velocity:**
+## Production Deployment References
 
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 h
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
-
-*Updated after each plan completion*
-
-## Accumulated Context
-
-### Decisions
-
-Decisions are logged in PROJECT.md Key Decisions table.
-Roadmap-level decisions from roadmap creation:
-
-- Roadmap: 5 coarse phases mirroring PRD §18 slots; Phase 3 (deploy) is a mid-timeline gate — public URL by Sat 6 PM or P1/P2 are dropped (cut rule).
-- Roadmap: SHR-01 (copy deep link) elevated ahead of SHR-02 (PNG card) inside Phase 5 — plans ordered 05-01 → 05-02.
-- Roadmap: Submission folded into Phase 5 as an exit-checked process gate (research PITFALLS #10), not its own phase (granularity: coarse, 3–5 phases).
-- Roadmap: P2 (FR-18/19) and prospects PRSP-01..07 stay unmapped — v2 only.
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-- Time-box: ~48 h (Fri 9 Oct eve → Sun 11 Oct noon). A phase overrunning its PRD §18 slot threatens the Sat 6 PM gate; fallbacks pre-listed in research SUMMARY.md (deploy fallbacks, share-card download path).
-
-## Deferred Items
-
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| v2 (P2) | FR-18 FIRMS fire heuristic; FR-19 OG link preview | Deferred | 2026-10-11 |
-
-## Session Continuity
-
-Last session: 2026-10-11T15:02:24.467Z
-Stopped at: Phase 5 planned (3 plans ready)
-Resume file: .planning/phases/05-sharing-submission/05-01-PLAN.md
+- **Web Application URL (AWS Amplify):** https://main.d3332j0zzsigpw.amplifyapp.com
+- **API Endpoint URL (AWS Lambda Function URL, ap-south-1):** https://gnwpit4zuxcyot7ojhizhvi3ji0sbihv.lambda-url.ap-south-1.on.aws/api/assess
+- **Automated Deploy Verification:** `pnpm run verify:deploy` (Passing CORS, Latency p95 < 2.5s, Bundle < 200 KB gzip, and Deep-link SPA rewrites)
+- **Monorepo Test Suite:** 17 test suites, 96 tests (100% green across core, API, and web)
+- **Multi-Timezone Harness:** `pnpm test:tz` passing under both `TZ=UTC` and `TZ=Asia/Kolkata`
