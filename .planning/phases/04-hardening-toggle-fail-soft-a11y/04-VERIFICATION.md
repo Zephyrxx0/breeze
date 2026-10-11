@@ -49,3 +49,4 @@
 - `pnpm --filter @breeze/web build` (build completes in 185ms, gzip bundle 116.39 kB, well under 200 kB budget)
 - TypeScript type-checking passes with zero errors
 - Zero mock data or fabricated fallback numbers verified
+

@@ -74,3 +74,4 @@ Existing infrastructure covers all phase requirements.
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-10-11
+
