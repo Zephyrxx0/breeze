@@ -59,3 +59,4 @@ export function ForecastTooltip({ point, chartWidth = 600 }: ForecastTooltipProp
     </div>
   );
 }
+

@@ -48,3 +48,4 @@ export function TipList({ tips }: TipListProps) {
     </div>
   );
 }
+

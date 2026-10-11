@@ -46,3 +46,4 @@
 
 - `pnpm --filter @breeze/web build` passes in 177ms (112.95 kB gzipped JS, 6.13 kB gzipped CSS, well within <200 kB budget).
 - `pnpm test` passes 51/51 tests across all 10 suites in `@breeze/core` and `@breeze/api`.
+

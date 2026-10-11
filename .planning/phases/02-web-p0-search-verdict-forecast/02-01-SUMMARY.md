@@ -26,3 +26,4 @@
 
 - `pnpm --filter @breeze/web build` succeeded cleanly (bundle size ~106 kB gzipped JS, well below 200 kB budget).
 - `pnpm test` passed across all 10 test suites (51 tests).
+

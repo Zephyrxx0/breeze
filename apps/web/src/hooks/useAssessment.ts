@@ -24,3 +24,4 @@ export function useAssessment(lat: number, lon: number, enabled: boolean = true)
     refetchOnWindowFocus: false,
   });
 }
+

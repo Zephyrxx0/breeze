@@ -171,3 +171,4 @@ export function VerdictHero({ data }: VerdictHeroProps) {
     </div>
   );
 }
+

@@ -71,3 +71,4 @@ export function WeatherStrip({ weather }: WeatherStripProps) {
     </div>
   );
 }
+

@@ -64,3 +64,4 @@ export function LocationButton({ onLocationFound, onError }: LocationButtonProps
     </button>
   );
 }
+

@@ -106,3 +106,4 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
     </footer>
   );
 }
+

@@ -102,3 +102,4 @@ describe("ForecastChart Math & Accessibility", () => {
     });
   });
 });
+
