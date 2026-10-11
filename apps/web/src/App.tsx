@@ -1,6 +1,8 @@
 import { useState, useRef, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  categoryFor,
+  verdictFor,
   bestWindow,
   buildTips,
   confidenceFor,
@@ -24,6 +26,8 @@ import { BestWindowChip } from "./components/BestWindowChip";
 import { TipList } from "./components/TipList";
 import { WeatherStrip } from "./components/WeatherStrip";
 import { ProvenanceFooter } from "./components/ProvenanceFooter";
+import { ShareCard } from "./components/ShareCard";
+import { captureAndShareCard } from "./lib/shareCardCapture";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +37,9 @@ export function MainView() {
   const [announcement, setAnnouncement] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isSharingCard, setIsSharingCard] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   const { places, isCurrentSaved, toggleSaveCurrent, removePlace } = useSavedPlaces({
     lat,
@@ -66,6 +72,32 @@ export function MainView() {
       .catch(() => {
         setToastMessage("Could not copy link");
       });
+  };
+
+  const handleShareCard = async () => {
+    if (!shareCardRef.current || !data?.air?.current || isSharingCard) return;
+
+    setIsSharingCard(true);
+    const roundedLat = Math.round(lat * 100) / 100;
+    const roundedLon = Math.round(lon * 100) / 100;
+    const canonicalUrl = `${window.location.origin}/?lat=${roundedLat}&lon=${roundedLon}&n=${encodeURIComponent(name)}`;
+
+    try {
+      await captureAndShareCard({
+        element: shareCardRef.current,
+        placeName: name,
+        verdict: assessmentDetails?.verdict || "Current Air Verdict",
+        canonicalUrl,
+        onToast: (msg) => {
+          setToastMessage(msg);
+          setAnnouncement(msg);
+        },
+      });
+    } catch {
+      setToastMessage("Could not generate share card");
+    } finally {
+      setIsSharingCard(false);
+    }
   };
 
   // Profile state: hydrated synchronously from localStorage, strictly validated
@@ -147,9 +179,14 @@ export function MainView() {
       profile
     );
 
+    const category = categoryFor(current.pm25);
+    const verdict = verdictFor(category, profile);
+
     return {
       cleanestWindow,
       tips,
+      verdict,
+      category,
     };
   }, [data, profile]);
 
@@ -234,6 +271,8 @@ export function MainView() {
               onProfileChange={handleProfileChange}
               onAnnounce={handleAnnounce}
               onCopyLink={handleCopyLink}
+              onShareCard={handleShareCard}
+              isSharing={isSharingCard}
             />
             {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
               <ForecastChart
@@ -267,6 +306,30 @@ export function MainView() {
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
       />
+
+      {/* Hidden Off-Screen Share Card Container for 1080x1350 PNG Capture */}
+      {data?.air?.current && (
+        <div
+          style={{
+            position: "fixed",
+            left: "-9999px",
+            top: 0,
+            width: "1080px",
+            height: "1350px",
+            overflow: "hidden",
+            pointerEvents: "none",
+            zIndex: -100,
+          }}
+          aria-hidden="true"
+        >
+          <ShareCard
+            ref={shareCardRef}
+            data={data}
+            profile={profile}
+            tips={assessmentDetails?.tips}
+          />
+        </div>
+      )}
     </div>
   );
 }

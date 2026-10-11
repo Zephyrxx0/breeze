@@ -65,12 +65,55 @@ export function VerdictHero({
   const [activeTab, setActiveTab] = useState<"today" | "tomorrow">("today");
 
   const current = data.air.current;
+  const isAirUnavailable = data.air.status === "unavailable" || !current;
   const isStale = data.air.status === "stale";
   const nowMs = Date.now();
   const utcOffsetSeconds = data.location.utcOffsetSeconds;
 
   // Station-only mode check (model hourly missing or empty)
   const isModelUnavailable = !data.air.model?.hourly || data.air.model.hourly.length === 0;
+
+  if (isAirUnavailable) {
+    return (
+      <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-8 h-8 text-amber-600 shrink-0" aria-hidden="true" />
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Air assessment unavailable
+          </h1>
+        </div>
+        <p className="text-sm text-slate-600">
+          Live air quality data for this location is temporarily unavailable from upstream sources.
+        </p>
+        <div className="pt-2 flex items-center gap-2 border-t border-slate-200/40">
+          {onCopyLink && (
+            <button
+              type="button"
+              onClick={onCopyLink}
+              data-testid="copy-link-button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/80 shadow-2xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-98"
+            >
+              <LinkIcon className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+              <span>Copy Link</span>
+            </button>
+          )}
+          {onShareCard && (
+            <button
+              type="button"
+              onClick={onShareCard}
+              disabled={true}
+              title="Air assessment unavailable — cannot share card"
+              data-testid="share-card-button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-400 cursor-not-allowed text-white shadow-xs"
+            >
+              <Share2 className="w-3.5 h-3.5 text-blue-100" aria-hidden="true" />
+              <span>Share Card</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Confidence calculation
   const conf = confidenceFor({
@@ -300,9 +343,10 @@ export function VerdictHero({
           <button
             type="button"
             onClick={onShareCard}
-            disabled={isSharing}
+            disabled={isSharing || isAirUnavailable}
+            title={isAirUnavailable ? "Air assessment unavailable — cannot share card" : undefined}
             data-testid="share-card-button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-98"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-98"
           >
             <Share2 className="w-3.5 h-3.5 text-blue-100" aria-hidden="true" />
             <span>{isSharing ? "Generating..." : "Share Card"}</span>
