@@ -333,3 +333,4 @@ export function useSavedPlaces(current: { lat: number; lon: number; name: string
 - Full AI disclosure: built with Claude Code / Gemini CLI within 48h hackathon, production runtime is 100% deterministic TypeScript without LLM runtime latency.
 
 ## RESEARCH COMPLETE
+

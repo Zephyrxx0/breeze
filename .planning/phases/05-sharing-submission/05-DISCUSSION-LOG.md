@@ -187,3 +187,4 @@
 ## Deferred Ideas
 
 - None. (Dynamic server OG previews and NASA FIRMS fire map remain deferred to v2).
+
