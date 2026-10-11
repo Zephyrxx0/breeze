@@ -14,5 +14,5 @@ resolve_s3 = true
 region = "ap-south-1"
 stack_name = "breeze-api-prod"
 parameter_overrides = [
-  "AllowedOrigin=\"*\""
+  "AllowedOrigin=\"https://main.d3332j0zzsigpw.amplifyapp.com\""
 ]
