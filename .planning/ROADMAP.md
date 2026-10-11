@@ -95,8 +95,12 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 03-01: SAM deploy of the API (--build-in-source, Function URL, NoEcho key, allow-list) with curl single-ACAO + OPTIONS verification from the deployed URL
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-02: Amplify connect + monorepo root + SPA rewrite + VITE_API_BASE_URL origin ordering, then phone test, signed-out deep-link check and perf-budget verification
 
 ### Phase 4: Hardening — Toggle, Fail-Soft & A11y
