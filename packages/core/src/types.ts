@@ -8,6 +8,9 @@ export type Category =
 
 export type Profile = "standard" | "sensitive";
 
+/** What the person is doing outdoors; changes the tips (never the CPCB verdict). */
+export type Activity = "everyday" | "runner" | "worker" | "parent";
+
 export type Verdict = "Good to go" | "Take care" | "Stay indoors if you can";
 
 export type Confidence = "High" | "Medium" | "Low";

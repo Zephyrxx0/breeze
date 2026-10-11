@@ -1,4 +1,4 @@
-import { VERBATIM_TIPS } from "./config";
+import { VERBATIM_TIPS, ACTIVITY_TIPS } from "./config";
 import { categoryFor } from "./category";
 import { parseWall, hourLabel } from "./wallclock";
 import type {
@@ -7,6 +7,7 @@ import type {
   BestWindow,
   Category,
   EffectivePm25,
+  Activity,
 } from "./types";
 
 export interface TipContext {
@@ -15,6 +16,8 @@ export interface TipContext {
   uv?: number;
   feelsLikeC?: number;
   rainProbNext6h?: number;
+  /** Optional activity lens; defaults to "everyday" */
+  activity?: Activity;
 }
 
 /**
@@ -30,7 +33,7 @@ export function formatTip(tip: Tip): string {
  * A3 is suppressed if window is null OR window.meanPm25 >= 91 (no invitation into Poor air).
  */
 export function buildTips(ctx: TipContext, profile: Profile): Tip[] {
-  const { effectivePm25, window, uv, feelsLikeC, rainProbNext6h } = ctx;
+  const { effectivePm25, window, uv, feelsLikeC, rainProbNext6h, activity = "everyday" } = ctx;
   const pm25 = effectivePm25.pm25;
   const currentCategory = categoryFor(pm25);
   const pmCite = `PM2.5 is ${Math.round(pm25)} µg/m³`;
@@ -149,6 +152,39 @@ export function buildTips(ctx: TipContext, profile: Profile): Tip[] {
       text: VERBATIM_TIPS.A8,
       priority: 5,
     });
+  }
+
+  // Activity lens: add focused tips and drop the generic ones they replace
+  const act: Tip[] = [];
+  const add = (id: string, text: string, priority: number) => act.push({ id, cite: pmCite, text, priority });
+  const replaces = new Set<string>();
+
+  if (activity === "runner") {
+    if (pm25 >= 91) {
+      add("R4", ACTIVITY_TIPS.R_SKIP, 1);
+      replaces.add("A2");
+    } else if (pm25 >= 61) add("R3", ACTIVITY_TIPS.R_CAUTION, 2);
+    else if (pm25 >= 31) add("R2", ACTIVITY_TIPS.R_EASY, 3);
+    else add("R1", ACTIVITY_TIPS.R_GOOD, 3);
+  } else if (activity === "worker") {
+    if (pm25 >= 61) {
+      add("W1", ACTIVITY_TIPS.W_MASK, 1);
+      replaces.add("A1");
+    }
+    if (pm25 >= 91) add("W2", ACTIVITY_TIPS.W_BREAKS, 2);
+    if (window && isModerateOrWorse && window.meanPm25 < 91) add("W3", ACTIVITY_TIPS.W_SCHEDULE, 3);
+  } else if (activity === "parent") {
+    if (pm25 >= 91) add("K3", ACTIVITY_TIPS.K_INDOORS, 1);
+    else if (pm25 >= 61) add("K2", ACTIVITY_TIPS.K_SHORT, 2);
+    else if (pm25 >= 31) add("K1", ACTIVITY_TIPS.K_WATCH, 3);
+    else add("K0", ACTIVITY_TIPS.K_GOOD, 3);
+  }
+
+  if (act.length > 0) {
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      if (replaces.has(candidates[i].id)) candidates.splice(i, 1);
+    }
+    candidates.push(...act);
   }
 
   // Sort ascending by priority, cap at top 5

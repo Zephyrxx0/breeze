@@ -150,3 +150,52 @@ describe("buildTips & formatTip", () => {
     );
   });
 });
+
+describe("activity lens (runner / worker / parent)", () => {
+  const base = (pm25: number): EffectivePm25 => ({
+    pm25,
+    source: "model",
+    measuredAt: "2026-10-11T10:00:00Z",
+    confidence: "Low",
+  });
+  const ids = (pm25: number, activity: "everyday" | "runner" | "worker" | "parent", profile: "standard" | "sensitive" = "standard") =>
+    buildTips({ effectivePm25: base(pm25), window: null, activity }, profile).map((t) => t.id);
+
+  it("everyday is unchanged", () => {
+    expect(ids(95, "everyday")).toEqual(ids(95, "everyday"));
+    expect(ids(95, "everyday")).toContain("A2");
+  });
+
+  it("runner: skip outdoors at >= 91 and replaces the generic A2", () => {
+    const r = ids(95, "runner");
+    expect(r).toContain("R4");
+    expect(r).not.toContain("A2");
+  });
+
+  it("runner: graded advice at the boundaries", () => {
+    expect(ids(30, "runner")).toContain("R1");
+    expect(ids(31, "runner")).toContain("R2");
+    expect(ids(61, "runner")).toContain("R3");
+    expect(ids(91, "runner")).toContain("R4");
+  });
+
+  it("worker: all-shift N95 from 61 replaces A1", () => {
+    const w = ids(70, "worker");
+    expect(w).toContain("W1");
+    expect(w).not.toContain("A1");
+    expect(ids(60, "worker")).not.toContain("W1");
+    expect(ids(95, "worker")).toContain("W2");
+  });
+
+  it("parent: indoors play from 91, shorter play 61-90", () => {
+    expect(ids(95, "parent")).toContain("K3");
+    expect(ids(75, "parent")).toContain("K2");
+    expect(ids(20, "parent")).toContain("K0");
+  });
+
+  it("still caps at 5 tips and cites the triggering value", () => {
+    const tips = buildTips({ effectivePm25: base(120), window: null, activity: "worker", uv: 9, feelsLikeC: 40, rainProbNext6h: 90 }, "sensitive");
+    expect(tips.length).toBeLessThanOrEqual(5);
+    expect(tips.every((t) => t.cite.length > 0)).toBe(true);
+  });
+});

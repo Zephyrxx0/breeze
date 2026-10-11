@@ -91,3 +91,25 @@ export const VERBATIM_TIPS = {
   A4: "Keep windows closed at peak hours, run a purifier if you have one, air the room when levels dip",
   A8: "Rain is likely; carry an umbrella",
 } as const;
+
+export const ACTIVITY_LABELS: Record<"everyday" | "runner" | "worker" | "parent", string> = {
+  everyday: "Everyday",
+  runner: "Runner / cyclist",
+  worker: "Outdoor worker / rider",
+  parent: "Parent / caregiver",
+};
+
+/** Activity-specific tip copy (PRD §7.5 extension). Thresholds live in tips.ts next to the rules. */
+export const ACTIVITY_TIPS = {
+  R_GOOD: "Clean air: a good day for hard or long efforts outdoors",
+  R_EASY: "Fine for easy to moderate efforts; save your hardest session for the cleanest window",
+  R_CAUTION: "Keep it easy or move the session indoors; hard breathing pulls more fine particles deep into your lungs",
+  R_SKIP: "Skip outdoor runs and rides today; use a treadmill or indoor trainer",
+  W_MASK: "You are outside for hours: wear a well-fitted N95 or FFP2 for the whole shift, not just in traffic",
+  W_BREAKS: "Take regular breaks away from traffic and dust, ideally indoors",
+  W_SCHEDULE: "Schedule the heaviest outdoor work in the cleanest window",
+  K_GOOD: "Good air for outdoor play and park time",
+  K_WATCH: "Outdoor play is fine; watch children with asthma or a cough",
+  K_SHORT: "Shorten outdoor play and avoid running games; pick the cleanest window",
+  K_INDOORS: "Keep children indoors for play today and keep windows closed",
+} as const;
