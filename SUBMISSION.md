@@ -3,8 +3,8 @@
 **Project Title:** Breeze: India Live Air Verdict  
 **Submission Category:** Web Applications / Public Utility / Climate & Environmental Impact  
 **Core Purpose:** Answer one question for any resident or visitor in India: *is the air outside OK for me right now, and what should I do about it?*  
-**Live Application URL:** https://main.d36a3fyg1r79q6.amplifyapp.com  
-**API Endpoint (AWS Lambda Function URL):** https://6u7szg647lq72w2345v4oxl42e0ypmfn.lambda-url.ap-south-1.on.aws/api/assess  
+**Live Application URL:** https://main.d3332j0zzsigpw.amplifyapp.com  
+**API Endpoint (AWS Lambda Function URL):** https://gnwpit4zuxcyot7ojhizhvi3ji0sbihv.lambda-url.ap-south-1.on.aws/api/assess  
 **Repository:** https://github.com/zeph/breeze  
 
 ---
@@ -104,3 +104,4 @@ In accordance with hackathon guidelines, we disclose all AI coding assistance ut
 - **Human Architectural Oversight & Quality Control:**
   - All domain rules, CPCB threshold math, fail-soft state machines, and data-honesty constraints were conceived, directed, and reviewed by human engineers.
   - **Zero Runtime AI:** Breeze contains **no LLMs or runtime AI models** in its inference path. All assessments, reason lines, and tips are computed deterministically via `@breeze/core` pure functions in <1 millisecond, guaranteeing zero hallucinations, zero token costs, and 100% predictable medical-grade guidance.
+
