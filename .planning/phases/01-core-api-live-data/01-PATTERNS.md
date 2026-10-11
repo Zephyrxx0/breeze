@@ -77,7 +77,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({ test: { projects: ["packages/core", "apps/api"] } });
 ```
 ```json
-// root package.json scripts — D-13 dev loop + D-14 TZ double-run
+// root package.json scripts — D-13 dev loop + DEC-04 TZ double-run
 { "dev": "…", "smoke": "tsx scripts/smoke-live.ts", "test": "vitest run",
   "test:tz": "TZ=UTC vitest run && TZ=Asia/Kolkata vitest run" }
 ```

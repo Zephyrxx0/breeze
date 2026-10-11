@@ -1,0 +1,3 @@
+# No database: state lives in the URL and localStorage
+
+Breeze persists nothing server-side. The current place lives in the URL (`/?lat=..&lon=..&n=..`) — place search, saved chips and deep links are all navigations to that URL — while the sensitivity profile and up to five saved places live in localStorage as `{lat, lon, label}` snapshots (coordinates rounded to 2 decimals are the identity; the label is display-only and frozen at save time). The server's only memory is a disposable in-memory TTL cache. This keeps the product shareable-by-construction, free to run, and trivially private, at the cost of no cross-device sync and a hard cap on saved places.
