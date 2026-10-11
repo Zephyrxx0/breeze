@@ -15,7 +15,7 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 - [x] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
 - [ ] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
 - [x] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
-- [ ] **Phase 5: Sharing & Submission** - Deep link first, PNG card second, saved places, about sheet, then submit (Sun)
+- [x] **Phase 5: Sharing & Submission** - Deep link first, PNG card second, saved places, about sheet, then submit (Sun)
 
 ## Phase Details
 
@@ -153,9 +153,9 @@ Plans:
 
 Plans:
 
-- [ ] 05-01: Deep-link polish + copy-link share path (elevated first), ≤5 saved-place chips, About/data-sources sheet
-- [ ] 05-02: 1080×1350 PNG share card — fonts.ready + double-capture loop, iOS Safari QA on a real iPhone, download/copy-link fallback
-- [ ] 05-03: Submission package — README, video record/upload, writeup, final smoke run, submit with a re-record slot held
+- [x] 05-01: Deep-link polish + copy-link share path (elevated first), ≤5 saved-place chips, About/data-sources sheet
+- [x] 05-02: 1080×1350 PNG share card — fonts.ready + double-capture loop, iOS Safari QA on a real iPhone, download/copy-link fallback
+- [x] 05-03: Submission package — README, video record/upload, writeup, final smoke run, submit with a re-record slot held
 
 ## Progress
 
@@ -168,7 +168,7 @@ Phases execute in numeric order: 1 → 2 → 3 (Sat 6 PM gate) → 4 → 5
 | 2. Web P0 — Search, Verdict & Forecast | 3/3 | Completed | 2026-10-11 |
 | 3. Deploy to Public URL | 2/2 | Completed | 2026-10-11 |
 | 4. Hardening — Toggle, Fail-Soft & A11y | 2/2 | Completed | 2026-10-11 |
-| 5. Sharing & Submission | 0/3 | Not started | - |
+| 5. Sharing & Submission | 3/3 | Completed | 2026-10-11 |
 
 **Notes:**
 
