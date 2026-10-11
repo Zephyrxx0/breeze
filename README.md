@@ -10,6 +10,8 @@ Every single measurement is fetched live, timestamped, and attributed either to 
 
 ## Key Features
 
+0. **Landing page + dashboard:** a calm, minimal landing page (`/`) with a single CTA into the app (`/app`). Canonical share links (`/?lat=..&lon=..`) still open the app directly. Light and dark themes follow the system setting.
+
 1. **One Plain-Language Verdict:**
    - Three actionable outcomes: **"Good to go"**, **"Take care"**, or **"Stay indoors if you can"**.
    - Derived from a strict 12-cell decision matrix matching India CPCB (Central Pollution Control Board) PM2.5 breakpoints.
@@ -30,7 +32,11 @@ Every single measurement is fetched live, timestamped, and attributed either to 
    - **Canonical Deep Links:** Share exact place assessments using clean coordinate and place query strings (`/?lat=28.61&lon=77.21&n=New%20Delhi`).
    - **Saved Places:** Bookmark up to 5 quick places in browser storage (`breeze:saved-places`) with active place chip indicators and zero-latency switching.
 
-6. **Educational About Dialog:**
+6. **India overview map (react-simple-maps):** live CAMS regional-model PM2.5 for 20 major cities in one keyless Open-Meteo call, colour-coded by CPCB category and always labelled "regional model estimate". The empty state doubles as a city picker; the dashboard pins your place.
+
+7. **Activity lens, school planner and poster:** tips adapt to runners/cyclists, outdoor workers/riders and parents (verdict unchanged); a school-day planner judges PE/playtime slots with the Sensitive thresholds; a printable QR poster links schools and RWAs to the live verdict; the app installs as an offline-ready PWA.
+
+8. **Educational About Dialog:**
    - Transparent explanations of PM2.5 vs composite AQI, station vs 45 km model physics, confidence metrics, and open data licensing.
 
 ---
@@ -63,8 +69,9 @@ graph TD
 | **API** | Hono 4, Node.js 24 (arm64), `@hono/aws-lambda` | Direct Lambda Function URL (no API Gateway latency or cost), sub-second cold starts. |
 | **Core Domain** | `@breeze/core` (pure TS) | Zero-dependency domain model shared between API and Web: CPCB categories, haversine math, verdict matrices, tip generator. |
 | **Data Fetching** | TanStack Query v5 | Client-side query caching, deduplication, and resilient fail-soft state management. |
+| **Charts & Map** | Bklit UI (visx + motion), react-simple-maps | Forecast area chart with CPCB bands, night shading and best-window highlight; India state map. Both are code-split. |
 | **Image Generation**| `html-to-image` | Client-side 1080×1350 canvas rasterization with WebKit warm-up loop. |
-| **Testing** | Vitest 5 | 17 test suites (96 tests) across core, API, and web with multi-timezone validation. |
+| **Testing** | Vitest 5 | 19 test suites (99 tests) across core, API, and web with multi-timezone validation. |
 
 ---
 

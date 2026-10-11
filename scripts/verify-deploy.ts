@@ -21,31 +21,42 @@ async function main() {
   console.log(`Function URL: ${functionUrl}`);
   console.log("-------------------------------------------------\n");
 
-  // 1. JS Bundle Budget (< 200 KB gzipped)
+  // 1. JS Bundle Budget (< 200 KB gzipped *initial* JS, PRD §16)
+  //    Initial = everything the dashboard needs for first paint. The Bklit forecast chart and the
+  //    India map are code-split and fetched after first paint, so they are reported but not counted.
   try {
     const assetsDir = join(process.cwd(), 'apps/web/dist/assets');
     const files = readdirSync(assetsDir);
     const jsFiles = files.filter(f => f.endsWith('.js'));
-    
-    let totalRawBytes = 0;
-    let totalGzipBytes = 0;
+    const DEFERRED = [/^ForecastChart-/, /^IndiaMap-/];
+
+    let initialRaw = 0;
+    let initialGzip = 0;
+    let deferredGzip = 0;
+    const deferredNames: string[] = [];
 
     for (const f of jsFiles) {
       const content = readFileSync(join(assetsDir, f));
-      totalRawBytes += content.byteLength;
-      totalGzipBytes += gzipSync(content).byteLength;
+      const gz = gzipSync(content).byteLength;
+      if (DEFERRED.some(re => re.test(f))) {
+        deferredGzip += gz;
+        deferredNames.push(f);
+      } else {
+        initialRaw += content.byteLength;
+        initialGzip += gz;
+      }
     }
 
     const maxBudget = 200 * 1024; // 200 KB = 204,800 bytes
-    const passed = totalGzipBytes < maxBudget;
+    const passed = initialGzip < maxBudget;
     results.push({
-      name: "JS Bundle Size (< 200 KB gzipped)",
+      name: "Initial JS Bundle (< 200 KB gzipped)",
       passed,
-      details: `Total: ${(totalGzipBytes / 1024).toFixed(2)} KB gzipped (${(totalRawBytes / 1024).toFixed(2)} KB raw) across ${jsFiles.length} file(s). Budget: 200 KB.`
+      details: `Initial: ${(initialGzip / 1024).toFixed(2)} KB gzipped (${(initialRaw / 1024).toFixed(2)} KB raw). Deferred (chart + map): ${(deferredGzip / 1024).toFixed(2)} KB gzipped in ${deferredNames.length} chunk(s). Budget: 200 KB.`
     });
   } catch (err) {
     results.push({
-      name: "JS Bundle Size (< 200 KB gzipped)",
+      name: "Initial JS Bundle (< 200 KB gzipped)",
       passed: false,
       details: `Failed to inspect bundle assets: ${err instanceof Error ? err.message : String(err)}`
     });
@@ -139,6 +150,28 @@ async function main() {
         name: "Amplify Deep-Link SPA Rewrite (?lat=..&lon=..)",
         passed: false,
         details: `Deep link test failed: ${err instanceof Error ? err.message : String(err)}`
+      });
+    }
+  }
+
+  // 5. Amplify /app route rewrite (landing CTA target must resolve to the SPA shell)
+  if (amplifyUrl) {
+    try {
+      const res = await fetch(`${amplifyUrl}/app`);
+      const contentType = res.headers.get('content-type') || "";
+      const body = await res.text();
+      const passed = res.ok && contentType.includes('text/html') && body.includes('id="root"');
+
+      results.push({
+        name: "Amplify /app SPA Rewrite (landing CTA target)",
+        passed,
+        details: `Status: ${res.status}, Content-Type: ${contentType}`
+      });
+    } catch (err) {
+      results.push({
+        name: "Amplify /app SPA Rewrite (landing CTA target)",
+        passed: false,
+        details: `/app test failed: ${err instanceof Error ? err.message : String(err)}`
       });
     }
   }
