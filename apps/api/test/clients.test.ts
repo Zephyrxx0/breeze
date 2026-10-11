@@ -171,6 +171,58 @@ describe("upstream clients (hermetic)", () => {
     });
   });
 
+  describe("openaq station selection correctness", () => {
+    const json = (res: import("node:http").ServerResponse, body: unknown) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(body));
+    };
+
+    it("skips dead stations, locations without a PM2.5 sensor, and never reads another parameter", async () => {
+      const recent = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      mock.setHandler((req, res) => {
+        if (req.url?.includes("/locations?")) {
+          expect(req.url).toContain("limit=1000");
+          json(res, {
+            results: [
+              // nearest, but dead since 2018
+              { id: 1, name: "Dead", datetimeLast: { utc: "2018-02-22T04:00:00Z" }, coordinates: { latitude: 28.611, longitude: 77.211 }, sensors: [{ id: 11, parameter: { id: 2, units: "µg/m³" } }] },
+              // near, live, but only reports NO2 (no PM2.5 sensor)
+              { id: 2, name: "NO2 only", datetimeLast: { utc: recent }, coordinates: { latitude: 28.612, longitude: 77.212 }, sensors: [{ id: 21, parameter: { id: 5, units: "µg/m³" } }] },
+              // live PM2.5
+              { id: 3, name: "Live PM2.5", datetimeLast: { utc: recent }, provider: { name: "CPCB" }, coordinates: { latitude: 28.65, longitude: 77.22 }, sensors: [{ id: 31, parameter: { id: 2, units: "µg/m³" } }] },
+            ],
+          });
+        } else if (req.url?.includes("/locations/3/latest")) {
+          json(res, { results: [{ sensorsId: 99, value: 5, datetime: { utc: recent } }, { sensorsId: 31, value: 88, datetime: { utc: recent } }] });
+        } else {
+          res.writeHead(404);
+          res.end();
+        }
+      });
+
+      const res = await fetchOpenAq(28.61, 77.21, { baseUrl: mock.baseUrl, key: "k" });
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.data.map((r) => r.name)).toEqual(["Live PM2.5"]);
+      expect(res.data[0].pm25).toBe(88); // the PM2.5 sensor row, not the first row
+      expect(res.data[0].provider).toBe("CPCB");
+    });
+
+    it("rejects PM2.5 sensors that are not in µg/m³", async () => {
+      const recent = new Date().toISOString();
+      mock.setHandler((req, res) => {
+        if (req.url?.includes("/locations?")) {
+          json(res, { results: [{ id: 4, name: "ppb", datetimeLast: { utc: recent }, coordinates: { latitude: 28.62, longitude: 77.21 }, sensors: [{ id: 41, parameter: { id: 2, units: "ppb" } }] }] });
+        } else {
+          res.writeHead(404);
+          res.end();
+        }
+      });
+      const res = await fetchOpenAq(28.61, 77.21, { baseUrl: mock.baseUrl, key: "k" });
+      expect(res.ok && res.data.length).toBe(0);
+    });
+  });
+
   describe("geocode searchPlaces", () => {
     it("returns places filtered to country_code IN", async () => {
       mock.setHandler((_req, res) => {

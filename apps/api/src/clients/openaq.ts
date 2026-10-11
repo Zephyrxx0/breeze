@@ -8,6 +8,8 @@ export const OpenAqLocationsSchema = z.object({
     z.object({
       id: z.union([z.number(), z.string()]),
       name: z.string().default("Unknown station"),
+      datetimeLast: z.object({ utc: z.string().optional() }).nullable().optional(),
+      provider: z.object({ name: z.string().optional() }).nullable().optional(),
       coordinates: z
         .object({
           latitude: z.number(),
@@ -85,7 +87,11 @@ export async function fetchOpenAq(
     options.baseUrl ?? process.env.OPENAQ_BASE_URL ?? "https://api.openaq.org/v3";
   const { bboxStr } = buildBoundingBox(lat, lon);
 
-  const locationsUrl = `${base}/locations?bbox=${bboxStr}&parameters_id=2&limit=20`;
+  // limit=1000 (API max): metro bboxes hold 100+ locations, many long dead, and results are
+  // relevance-sorted (bbox gives no distance), so a small page can miss the nearest live station.
+  const locationsUrl = `${base}/locations?bbox=${bboxStr}&parameters_id=2&limit=1000`;
+  const nowMs = Date.now();
+  const MAX_LAST_SEEN_MS = 3 * 60 * 60 * 1000;
 
   try {
     const locRes = await fetchWithTimeout(
@@ -110,41 +116,47 @@ export async function fetchOpenAq(
       };
     }
 
-    // Filter locations with coordinates and calculate distances
+    // Filter locations: must have coordinates, a PM2.5 sensor in µg/m³, be within 25 km and
+    // have reported in the last 3 h (OpenAQ keeps long-dead stations listed).
     const candidateLocations: Array<{
       id: string | number;
       name: string;
+      provider?: string;
       lat: number;
       lon: number;
       distanceKm: number;
-      pm25SensorId?: string | number;
+      pm25SensorId: string | number;
+      units: string;
     }> = [];
 
     for (const loc of locParsed.data.results) {
       if (!loc.coordinates) continue;
-      const dist = haversineKm(
-        lat,
-        lon,
-        loc.coordinates.latitude,
-        loc.coordinates.longitude
-      );
+      const sensor = loc.sensors?.find((s) => s.parameter?.id === 2);
+      if (!sensor) continue; // never fall back to another parameter's value
+      const units = sensor.parameter?.units ?? "µg/m³";
+      if (units !== "µg/m³") continue;
+
+      const lastSeen = loc.datetimeLast?.utc ? Date.parse(loc.datetimeLast.utc) : NaN;
+      if (Number.isFinite(lastSeen) && nowMs - lastSeen > MAX_LAST_SEEN_MS) continue;
+
+      const dist = haversineKm(lat, lon, loc.coordinates.latitude, loc.coordinates.longitude);
       if (dist <= 25) {
-        // Find PM2.5 sensor ID (parameter id 2)
-        const sensor = loc.sensors?.find((s) => s.parameter?.id === 2);
         candidateLocations.push({
           id: loc.id,
           name: loc.name,
+          provider: loc.provider?.name,
           lat: loc.coordinates.latitude,
           lon: loc.coordinates.longitude,
           distanceKm: dist,
-          pm25SensorId: sensor?.id,
+          pm25SensorId: sensor.id,
+          units,
         });
       }
     }
 
-    // Sort by distance ascending and pick up to 3 nearest
+    // Sort by distance ascending; look at a few more than 3 so a stale latest value doesn't hide the next station
     candidateLocations.sort((a, b) => a.distanceKm - b.distanceKm);
-    const nearest3 = candidateLocations.slice(0, 3);
+    const nearest3 = candidateLocations.slice(0, 5);
 
     if (nearest3.length === 0) {
       return { ok: true, data: [] };
@@ -169,12 +181,7 @@ export async function fetchOpenAq(
         if (!latParsed.success) return null;
 
         // Match PM2.5 row
-        const row = latParsed.data.results.find((r) => {
-          if (loc.pm25SensorId !== undefined) {
-            return String(r.sensorsId) === String(loc.pm25SensorId);
-          }
-          return true;
-        });
+        const row = latParsed.data.results.find((r) => String(r.sensorsId) === String(loc.pm25SensorId));
 
         if (!row || row.value === null || row.value === undefined || row.value < 0) {
           return null;
@@ -191,7 +198,8 @@ export async function fetchOpenAq(
           pm25: row.value,
           measuredAt: row.datetime?.utc ?? new Date().toISOString(),
           measuredAtUtc: row.datetime?.utc,
-          units: "µg/m³",
+          units: loc.units,
+          provider: loc.provider,
         };
         return reading;
       } catch {

@@ -7,9 +7,11 @@ import { dirname, resolve } from "node:path";
 // Load .env from workspace root if present
 try {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const rootEnvPath = resolve(currentDir, "../../../.env");
-  if (existsSync(rootEnvPath)) {
-    const content = readFileSync(rootEnvPath, "utf-8");
+  // .env.local wins over .env (first writer wins via ??=)
+  for (const file of [".env.local", ".env"]) {
+    const envPath = resolve(currentDir, "../../../", file);
+    if (!existsSync(envPath)) continue;
+    const content = readFileSync(envPath, "utf-8");
     for (const line of content.split("\n")) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) continue;
