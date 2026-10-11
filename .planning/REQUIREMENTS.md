@@ -47,8 +47,8 @@ Requirements for initial release. Each maps to roadmap phases. PRD FR IDs preser
 
 ### Deployment
 
-- [ ] **DEPL-01**: The app is live at a public AWS URL (Amplify Hosting SPA + Lambda Function URL via SAM) and works on a real phone over mobile data — G4, PRD §13
-- [ ] **DEPL-02**: Performance budget holds: verdict <3 s warm on 4G, API p95 ≤2.5 s warm, initial JS <200 KB gzipped, Lighthouse mobile ≥90 — PRD §16
+- [x] **DEPL-01**: The app is live at a public AWS URL (Amplify Hosting SPA + Lambda Function URL via SAM) and works on a real phone over mobile data — G4, PRD §13
+- [x] **DEPL-02**: Performance budget holds: verdict <3 s warm on 4G, API p95 ≤2.5 s warm, initial JS <200 KB gzipped, Lighthouse mobile ≥90 — PRD §16
 
 ## v2 Requirements
 
@@ -110,8 +110,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHR-02 | Phase 5 | Pending |
 | SHR-03 | Phase 5 | Pending |
 | SHR-04 | Phase 5 | Pending |
-| DEPL-01 | Phase 3 | Pending |
-| DEPL-02 | Phase 3 | Pending |
+| DEPL-01 | Phase 3 | Complete |
+| DEPL-02 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total

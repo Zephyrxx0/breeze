@@ -138,3 +138,4 @@
 - Custom Route 53 domain mapping (Phase 5 / Post-hackathon).
 - PNG share card with html-to-image and saved place chips (Phase 5).
 - NASA FIRMS fire heuristic (P2 / v2).
+
