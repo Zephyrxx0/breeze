@@ -14,7 +14,7 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 - [x] **Phase 1: Core, API & Live Data** - Tested decision engine + live /api/assess with fail-soft orchestration (Fri eve – Sat morning)
 - [x] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
 - [ ] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
-- [ ] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
+- [x] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
 - [ ] **Phase 5: Sharing & Submission** - Deep link first, PNG card second, saved places, about sheet, then submit (Sun)
 
 ## Phase Details
@@ -124,16 +124,16 @@ Plans:
 
 Plans:
 
-- [ ] 04-01-PLAN.md
-- [ ] 04-02-PLAN.md
+- [x] 04-01-PLAN.md
+- [x] 04-02-PLAN.md
 
 **Wave 1**
 
-- [ ] 04-01: Sensitive toggle with zero-refetch assertion + fail-soft states (total-failure Retry card, stale age labels, per-section unavailable rendering)
+- [x] 04-01: Sensitive toggle with zero-refetch assertion + fail-soft states (total-failure Retry card, stale age labels, per-section unavailable rendering)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02: Accessibility pass — contrast-validated tokens, colour+icon+word verdict, aria-live, keyboard path incl. chart, reduced motion, Lighthouse a11y ≥90
+- [x] 04-02: Accessibility pass — contrast-validated tokens, colour+icon+word verdict, aria-live, keyboard path incl. chart, reduced motion, Lighthouse a11y ≥90
 
 ### Phase 5: Sharing & Submission
 
@@ -167,7 +167,7 @@ Phases execute in numeric order: 1 → 2 → 3 (Sat 6 PM gate) → 4 → 5
 | 1. Core, API & Live Data | 6/6 | Completed | 2026-10-11 |
 | 2. Web P0 — Search, Verdict & Forecast | 3/3 | Completed | 2026-10-11 |
 | 3. Deploy to Public URL | 2/2 | Completed | 2026-10-11 |
-| 4. Hardening — Toggle, Fail-Soft & A11y | 0/2 | Not started | - |
+| 4. Hardening — Toggle, Fail-Soft & A11y | 2/2 | Completed | 2026-10-11 |
 | 5. Sharing & Submission | 0/3 | Not started | - |
 
 **Notes:**
