@@ -49,3 +49,4 @@
 - `pnpm --filter @breeze/web build` (build completes in ~200ms, bundle size 115.29 kB gzipped JS, well below 200 kB budget)
 - `pnpm smoke` (all 4 Indian place tiers, blackhole degrade paths, and live geocode checks pass)
 - TypeScript checks and zero mock data verified
+

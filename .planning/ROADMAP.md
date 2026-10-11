@@ -12,7 +12,7 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Core, API & Live Data** - Tested decision engine + live /api/assess with fail-soft orchestration (Fri eve – Sat morning)
-- [ ] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
+- [x] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
 - [ ] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
 - [ ] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
 - [ ] **Phase 5: Sharing & Submission** - Deep link first, PNG card second, saved places, about sheet, then submit (Sun)
