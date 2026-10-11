@@ -77,6 +77,8 @@ describe("Share Card Feature (SHR-02)", () => {
         <ShareCard
           data={mockAssessmentData}
           profile="standard"
+          placeName="New Delhi, Delhi"
+          shareUrl="breeze.example.app"
           tips={[
             { id: "mask", kind: "mask", priority: 1, text: "Wear an N95 mask outdoors" },
           ]}
@@ -97,7 +99,7 @@ describe("Share Card Feature (SHR-02)", () => {
 
       // Station provenance
       expect(card.textContent).toContain("Connaught Place Monitoring Station");
-      expect(card.textContent).toContain("breeze-air.in");
+      expect(card.textContent).toContain("breeze.example.app");
 
       // Tips block
       expect(card.textContent).toContain("Wear an N95 mask outdoors");

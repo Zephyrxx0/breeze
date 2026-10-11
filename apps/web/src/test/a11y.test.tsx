@@ -177,6 +177,8 @@ describe("WCAG AA Accessibility Suite (UAX-02)", () => {
         { time: "2026-10-11T14:00", pm25: 120 },
       ];
 
+      // 12:00 IST so the first point is "now"
+      vi.setSystemTime(new Date("2026-10-11T06:30:00Z"));
       render(<ForecastChart hourly={hourly} utcOffsetSeconds={19800} />);
 
       const slider = screen.getByRole("slider");
@@ -221,7 +223,7 @@ describe("WCAG AA Accessibility Suite (UAX-02)", () => {
       expect(slider.getAttribute("tabIndex")).toBe("0");
       expect(slider.getAttribute("aria-valuemin")).toBe("0");
       expect(slider.getAttribute("aria-valuemax")).toBe("1");
-      expect(slider.className).toContain("focus-visible:ring-blue-600");
+      expect(slider.className).toContain("focus-visible:ring-accent");
     });
   });
 

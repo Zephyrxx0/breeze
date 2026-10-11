@@ -65,8 +65,9 @@ describe("Sharing & Saved Places components", () => {
       expect(blrBtn).toBeTruthy();
 
       // Check active styling on parent chip wrapper
-      const delhiWrapper = delhiBtn.closest("div");
-      expect(delhiWrapper?.className).toContain("border-blue-600");
+      expect(delhiBtn.getAttribute("aria-current")).toBe("true");
+      expect(blrBtn.getAttribute("aria-current")).toBeNull();
+      expect(delhiBtn.closest("div")?.getAttribute("data-active")).toBe("true");
     });
 
     it("triggers onSelectPlace when clicked", () => {

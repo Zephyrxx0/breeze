@@ -1,37 +1,275 @@
 @import "tailwindcss";
 
-@theme {
-  --color-cpcb-good: #22c55e;
-  --color-cpcb-satisfactory: #84cc16;
-  --color-cpcb-moderate: #eab308;
-  --color-cpcb-poor: #f97316;
-  --color-cpcb-very-poor: #ef4444;
-  --color-cpcb-severe: #991b1b;
+/* Dark mode follows the system theme (PRD §14) — no manual class toggle. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* ------------------------------------------------------------------ */
+/* Semantic design tokens                                              */
+/* ------------------------------------------------------------------ */
+:root {
+  color-scheme: light dark;
+
+  --canvas: #f2f6f5;
+  --canvas-2: #e6efed;
+  --surface: #ffffff;
+  --surface-2: #f5f8f7;
+  --line: rgb(12 40 48 / 0.1);
+  --line-strong: rgb(12 40 48 / 0.18);
+  --ink: #0b1a20;
+  --ink-2: #384d55;
+  --ink-3: #566b73;
+  --accent: #14639a;
+  --accent-soft: rgb(20 99 154 / 0.1);
+  --accent-ink: #ffffff;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.7) inset, 0 1px 2px rgb(12 40 48 / 0.04),
+    0 12px 32px -12px rgb(12 40 48 / 0.14);
+  --shadow-pop: 0 18px 50px -12px rgb(12 40 48 / 0.28);
+
+  /* Verdict tint (r g b) — retinted by [data-verdict] on the app root */
+  --tint: 31 157 122;
+
+  /* India map */
+  --map-land: #dfe9e6;
+  --map-line: #ffffff;
+  --map-land-hover: #cddcd8;
+
+  /* Bklit chart tokens */
+  --chart-background: transparent;
+  --chart-foreground: var(--ink);
+  --chart-foreground-muted: var(--ink-3);
+  --chart-line-primary: var(--accent);
+  --chart-line-secondary: var(--ink-3);
+  --chart-crosshair: var(--ink-2);
+  --chart-grid: rgb(12 40 48 / 0.09);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: rgb(11 26 32 / 0.92);
+  --chart-tooltip-foreground: #f4f9fa;
+  --chart-tooltip-muted: #a9bcc2;
+  --chart-marker-background: var(--surface-2);
+  --chart-marker-border: var(--line-strong);
+  --chart-marker-foreground: var(--ink);
+  --chart-label: var(--ink-3);
+  --chart-1: var(--accent);
+  --chart-2: var(--ink-2);
+  --chart-3: var(--ink-3);
+  --chart-4: #8aa0a8;
+  --chart-5: #c3d0d4;
+  --chart-scale-01: oklch(0.98 0.003 106);
+  --chart-scale-02: oklch(0.92 0.008 106);
+  --chart-scale-03: oklch(0.82 0.015 106);
+  --chart-scale-04: oklch(0.68 0.02 106);
+  --chart-scale-05: oklch(0.55 0.025 106);
+  --chart-scale-pattern-color: oklch(0.96 0.005 106);
 }
 
-:root {
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #071014;
+    --canvas-2: #0c1a20;
+    --surface: #0f1c23;
+    --surface-2: #14252d;
+    --line: rgb(255 255 255 / 0.09);
+    --line-strong: rgb(255 255 255 / 0.17);
+    --ink: #ecf4f6;
+    --ink-2: #b7c8ce;
+    --ink-3: #8ea4ac;
+    --accent: #72bff0;
+    --accent-soft: rgb(114 191 240 / 0.14);
+    --accent-ink: #04141d;
+    --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4),
+      0 16px 40px -14px rgb(0 0 0 / 0.6);
+    --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.7);
+
+    --map-land: #19303a;
+    --map-line: #0f1c23;
+    --map-land-hover: #214250;
+
+    --chart-grid: rgb(255 255 255 / 0.08);
+    --chart-tooltip-background: rgb(236 244 246 / 0.96);
+    --chart-tooltip-foreground: #0b1a20;
+    --chart-tooltip-muted: #445a62;
+    --chart-4: #5d7680;
+    --chart-5: #34505a;
+    --chart-scale-01: oklch(0.28 0.03 270);
+    --chart-scale-02: oklch(0.38 0.04 270);
+    --chart-scale-03: oklch(0.48 0.05 270);
+    --chart-scale-04: oklch(0.58 0.06 270);
+    --chart-scale-05: oklch(0.68 0.07 270);
+    --chart-scale-pattern-color: oklch(0.145 0 0);
+  }
+}
+
+@theme inline {
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+
+  --color-canvas: var(--canvas);
+  --color-canvas-2: var(--canvas-2);
+  --color-surface: var(--surface);
+  --color-inset: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+
+  /* Verdict colours (PRD §14) */
+  --color-go: #1f9d7a;
+  --color-care: #e8a317;
+  --color-stay: #d64545;
+
+  /* CPCB NAQI categories */
+  --color-cpcb-good: #1f9d7a;
+  --color-cpcb-satisfactory: #7cb518;
+  --color-cpcb-moderate: #e8a317;
+  --color-cpcb-poor: #ee7b30;
+  --color-cpcb-very-poor: #d64545;
+  --color-cpcb-severe: #8f1d2c;
+
+  /* Bklit chart colours (Tailwind utility bridge) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-background: var(--chart-background);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-label: var(--chart-label);
+
+  --animate-drift-a: drift-a 26s ease-in-out infinite alternate;
+  --animate-drift-b: drift-b 32s ease-in-out infinite alternate;
+  --animate-drift-c: drift-c 38s ease-in-out infinite alternate;
+  --animate-breathe: breathe 7s ease-in-out infinite;
+  --animate-rise: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 0.5s ease both;
+  --animate-wave: wave 14s linear infinite;
+  --animate-wave-slow: wave 22s linear infinite reverse;
+  --animate-ping-soft: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-flow: flow 9s linear infinite;
+}
+
+@keyframes drift-a {
+  to { transform: translate3d(8vw, 6vh, 0) scale(1.15); }
+}
+@keyframes drift-b {
+  to { transform: translate3d(-9vw, 8vh, 0) scale(0.9); }
+}
+@keyframes drift-c {
+  to { transform: translate3d(5vw, -9vh, 0) scale(1.1); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(0.94); opacity: 0.55; }
+  50% { transform: scale(1.06); opacity: 0.9; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes wave {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes ping-soft {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes flow {
+  to { stroke-dashoffset: -400; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--canvas);
+  color: var(--ink);
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--tint) / 0.28);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Ambient, verdict-tinted atmosphere behind the app */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 38rem at 85% -10%, rgb(var(--tint) / 0.2), transparent 60%),
+    radial-gradient(48rem 34rem at -10% 20%, rgb(var(--tint) / 0.1), transparent 60%),
+    linear-gradient(180deg, var(--canvas), var(--canvas-2));
+  transition: background 0.8s ease;
+}
+
+/* Frosted surface used by cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Verdict-hero wave motif (slow, subtle; disabled by reduced motion) */
+.wave-track {
+  width: 200%;
+  display: flex;
 }
 
 /* Unified high-contrast focus rings */
-.focus-ring {
-  outline: none;
-}
-.focus-ring:focus-visible {
-  outline: 2px solid #2563eb;
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Prefers-reduced-motion: disable animations and pulse, instantaneous transitions */
+/* Prefers-reduced-motion: disable animation, instantaneous transitions */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
@@ -51,4 +289,20 @@ body {
   }
 }
 
-
+/* Printable noticeboard poster: print only the poster */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-poster,
+  .print-poster * {
+    visibility: visible;
+  }
+  .print-poster {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    max-width: 28rem;
+    height: fit-content;
+  }
+}

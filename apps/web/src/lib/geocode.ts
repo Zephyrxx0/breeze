@@ -16,6 +16,8 @@ export const GeocodeResponseSchema = z.object({
     .default([]),
 });
 
+export type GeocodeResult = PlaceSearchResult;
+
 export interface SearchPlacesOptions {
   signal?: AbortSignal;
   baseUrl?: string;
