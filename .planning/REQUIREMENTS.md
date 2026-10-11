@@ -90,34 +90,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLC-01 | — | Pending |
-| PLC-02 | — | Pending |
-| PLC-03 | — | Pending |
-| ASM-01 | — | Pending |
-| ASM-02 | — | Pending |
-| ASM-03 | — | Pending |
-| ASM-04 | — | Pending |
-| DEC-01 | — | Pending |
-| DEC-02 | — | Pending |
-| DEC-03 | — | Pending |
-| DEC-04 | — | Pending |
-| FCT-01 | — | Pending |
-| FCT-02 | — | Pending |
-| FCT-03 | — | Pending |
-| UAX-01 | — | Pending |
-| UAX-02 | — | Pending |
-| SHR-01 | — | Pending |
-| SHR-02 | — | Pending |
-| SHR-03 | — | Pending |
-| SHR-04 | — | Pending |
-| DEPL-01 | — | Pending |
-| DEPL-02 | — | Pending |
+| PLC-01 | Phase 2 | Pending |
+| PLC-02 | Phase 2 | Pending |
+| PLC-03 | Phase 2 | Pending |
+| ASM-01 | Phase 2 | Pending |
+| ASM-02 | Phase 2 | Pending |
+| ASM-03 | Phase 4 | Pending |
+| ASM-04 | Phase 1 | Pending |
+| DEC-01 | Phase 1 | Pending |
+| DEC-02 | Phase 1 | Pending |
+| DEC-03 | Phase 1 | Pending |
+| DEC-04 | Phase 1 | Pending |
+| FCT-01 | Phase 2 | Pending |
+| FCT-02 | Phase 2 | Pending |
+| FCT-03 | Phase 2 | Pending |
+| UAX-01 | Phase 4 | Pending |
+| UAX-02 | Phase 4 | Pending |
+| SHR-01 | Phase 5 | Pending |
+| SHR-02 | Phase 5 | Pending |
+| SHR-03 | Phase 5 | Pending |
+| SHR-04 | Phase 5 | Pending |
+| DEPL-01 | Phase 3 | Pending |
+| DEPL-02 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 (pending roadmap)
+- Mapped to phases: 22
+- Unmapped: 0 ✓
+
+Phase summary: Phase 1 = Core, API & Live Data (5) · Phase 2 = Web P0 (8) · Phase 3 = Deploy to Public URL (2) · Phase 4 = Hardening (3) · Phase 5 = Sharing & Submission (4).
+v2 items (FR-18, FR-19, PRSP-01..07) are intentionally unmapped.
 
 ---
 *Requirements defined: 2026-10-11*
-*Last updated: 2026-10-11 after initial definition*
+*Last updated: 2026-10-11 after roadmap creation (22/22 mapped)*
