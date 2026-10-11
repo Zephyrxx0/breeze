@@ -1,11 +1,23 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  bestWindow,
+  buildTips,
+  confidenceFor,
+  wallFromInstant,
+  type EffectivePm25,
+} from "@breeze/core";
 import { useLocationParams } from "./hooks/useLocationParams";
 import { useAssessment } from "./hooks/useAssessment";
 import { SearchBox } from "./components/SearchBox";
 import { LocationButton } from "./components/LocationButton";
 import { Skeletons } from "./components/Skeletons";
 import { ErrorCard } from "./components/ErrorCard";
+import { VerdictHero } from "./components/VerdictHero";
+import { BestWindowChip } from "./components/BestWindowChip";
+import { TipList } from "./components/TipList";
+import { WeatherStrip } from "./components/WeatherStrip";
+import { ProvenanceFooter } from "./components/ProvenanceFooter";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +37,56 @@ export function MainView() {
     setGeoError(msg);
     searchInputRef.current?.focus();
   };
+
+  const assessmentDetails = useMemo(() => {
+    if (!data?.air?.current) return null;
+
+    const current = data.air.current;
+    const nowMs = Date.now();
+    const conf = confidenceFor({
+      source: current.source,
+      distanceKm: current.station?.distanceKm,
+    });
+
+    const effectivePm25: EffectivePm25 = {
+      pm25: current.pm25,
+      source: current.source,
+      measuredAt: current.measuredAt,
+      station: current.station,
+      modelDistanceNote: current.modelDistanceNote,
+      confidence: conf,
+    };
+
+    const hourlyAir = (data.air.model?.hourly ?? []).map((h) => ({
+      time: h.time,
+      pm25: h.pm25,
+      pm10: h.pm10,
+    }));
+
+    const currentWall = wallFromInstant(nowMs, data.location.utcOffsetSeconds);
+    const cleanestWindow = bestWindow(hourlyAir, currentWall);
+
+    const weatherFirst = data.weather?.hourly?.[0];
+    const uv = weatherFirst?.uvIndex ?? data.weather?.daily?.uvIndexMax?.[0];
+    const feelsLikeC = weatherFirst?.apparentTemperature;
+    const rainProbNext6h = weatherFirst?.precipitationProbability;
+
+    const tips = buildTips(
+      {
+        effectivePm25,
+        window: cleanestWindow,
+        uv,
+        feelsLikeC,
+        rainProbNext6h,
+      },
+      "standard"
+    );
+
+    return {
+      cleanestWindow,
+      tips,
+    };
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center">
@@ -62,15 +124,15 @@ export function MainView() {
           </div>
         ) : isLoading ? (
           <Skeletons />
-        ) : isError || !data?.air?.current ? (
+        ) : isError || !data?.air?.current || !assessmentDetails ? (
           <ErrorCard onRetry={() => refetch()} />
         ) : (
           <div className="space-y-4" id="assessment-content">
-            {/* Placeholder container where Plan 02 & 03 components mount */}
-            <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs text-slate-700 text-sm">
-              <p className="font-semibold text-slate-900">Assessment loaded for {name}</p>
-              <p className="text-xs text-slate-500 mt-1">PM2.5: {data.air.current.pm25} µg/m³ · Source: {data.air.current.source}</p>
-            </div>
+            <VerdictHero data={data} />
+            <BestWindowChip window={assessmentDetails.cleanestWindow} />
+            <TipList tips={assessmentDetails.tips} />
+            <WeatherStrip weather={data.weather} />
+            <ProvenanceFooter data={data} />
           </div>
         )}
       </main>

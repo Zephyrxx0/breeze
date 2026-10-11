@@ -107,3 +107,78 @@ export interface PlaceSearchResult {
   latitude: number;
   longitude: number;
 }
+
+export interface AssessResponse {
+  generatedAt: string;
+  location: {
+    lat: number;
+    lon: number;
+    timezone?: string;
+    utcOffsetSeconds: number;
+  };
+  air: {
+    status: "ok" | "stale" | "unavailable";
+    current: {
+      pm25: number;
+      source: "station" | "model";
+      measuredAt: string;
+      station?: {
+        id?: number | string;
+        name: string;
+        distanceKm: number;
+        provider?: string;
+      };
+      modelDistanceNote?: "~45 km";
+      confidence: Confidence;
+    } | null;
+    model: {
+      hourly: Array<{
+        time: string;
+        pm25: number;
+        pm10?: number;
+      }>;
+    } | null;
+    comparison?: {
+      ratio: number;
+      stationPm25: number;
+      modelPm25: number;
+    };
+  };
+  weather: {
+    status: "ok" | "stale" | "unavailable";
+    current?: {
+      temperature2m?: number;
+      apparentTemperature?: number;
+      relativeHumidity2m?: number;
+      precipitationProbability?: number;
+      uvIndex?: number;
+      windSpeed10m?: number;
+      windDirection10m?: number;
+    };
+    hourly?: Array<{
+      time: string;
+      temperature2m?: number;
+      apparentTemperature?: number;
+      relativeHumidity2m?: number;
+      precipitationProbability?: number;
+      uvIndex?: number;
+      windSpeed10m?: number;
+      windDirection10m?: number;
+    }>;
+    daily?: {
+      uvIndexMax?: number[];
+      sunrise?: string[];
+      sunset?: string[];
+    };
+  };
+  sources: Record<
+    string,
+    {
+      status: "ok" | "stale" | "unavailable";
+      fetchedAt?: string;
+      ageMin?: number;
+      error?: string;
+    }
+  >;
+}
+
