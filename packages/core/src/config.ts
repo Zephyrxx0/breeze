@@ -28,32 +28,38 @@ export const BANDS: readonly Band[] = [
 
 /**
  * 12-cell verdict decision matrix
- * PRD §7.2
+ * PRD §7.2:
+ * Good: both "Good to go"
+ * Satisfactory: standard "Good to go", sensitive "Take care"
+ * Moderate: both "Take care"
+ * Poor: standard "Take care", sensitive "Stay indoors if you can"
+ * Very Poor: both "Stay indoors if you can"
+ * Severe: both "Stay indoors if you can"
  */
 export const VERDICT_MATRIX: Record<Category, Record<Profile, Verdict>> = {
   Good: {
-    general: "good_to_go",
-    sensitive: "good_to_go",
+    standard: "Good to go",
+    sensitive: "Good to go",
   },
   Satisfactory: {
-    general: "good_to_go",
-    sensitive: "take_care",
+    standard: "Good to go",
+    sensitive: "Take care",
   },
   Moderate: {
-    general: "take_care",
-    sensitive: "take_care",
+    standard: "Take care",
+    sensitive: "Take care",
   },
   Poor: {
-    general: "take_care",
-    sensitive: "stay_indoors",
+    standard: "Take care",
+    sensitive: "Stay indoors if you can",
   },
   "Very Poor": {
-    general: "stay_indoors",
-    sensitive: "stay_indoors",
+    standard: "Stay indoors if you can",
+    sensitive: "Stay indoors if you can",
   },
   Severe: {
-    general: "stay_indoors",
-    sensitive: "stay_indoors",
+    standard: "Stay indoors if you can",
+    sensitive: "Stay indoors if you can",
   },
 };
 
@@ -61,7 +67,7 @@ export const WINDOW_CONFIG = {
   DAY_START_HOUR: 5,
   DAY_END_HOUR: 21,
   WINDOW_DURATION_HOURS: 3,
-  IMPROVEMENT_THRESHOLD: 0.15, // 15% better than current
+  IMPROVEMENT_THRESHOLD: 0.15, // 15% better than mean of same period
   DAYTIME_START_HOUR: 6,
   DAYTIME_END_HOUR: 20,
 } as const;
@@ -75,11 +81,13 @@ export const TIP_THRESHOLDS = {
 } as const;
 
 export const VERBATIM_TIPS = {
-  MASK_N95: "Wear an N95 mask if you step outside today.",
-  CLOSE_WINDOWS: "Keep windows and doors closed to block outdoor particulate.",
-  INDOOR_PURIFIER: "Run an air purifier indoors, especially in bedrooms.",
-  LIMIT_OUTDOOR_EXERCISE: "Avoid intense outdoor exercise until air quality improves.",
-  MORNING_HAZE: "Early morning inversion traps pollutants; postpone runs until afternoon.",
-  WIND_DISPERSION: "Breezy conditions are helping disperse surface pollutants.",
-  CALM_WIND: "Calm surface winds are allowing pollutants to settle and accumulate.",
+  A1: "Wear a well-fitted N95 or FFP2 mask outdoors; cloth and surgical masks filter fine particles poorly",
+  A5: "Keep any prescribed inhaler or medication with you and limit time outside",
+  A2: "Skip outdoor exercise today",
+  A2b: "Do hard exercise indoors or in the cleanest window",
+  A6_STANDARD: "Use SPF 30+ sunscreen, a hat and sunglasses; UV peaks about 10 AM–4 PM",
+  A6_HIGH: "Use SPF 30+ sunscreen, a hat and sunglasses; UV peaks about 10 AM–4 PM. At 8+ seek shade at midday",
+  A7: "Drink water regularly and avoid heavy exertion at midday",
+  A4: "Keep windows closed at peak hours, run a purifier if you have one, air the room when levels dip",
+  A8: "Rain is likely; carry an umbrella",
 } as const;

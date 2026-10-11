@@ -6,13 +6,13 @@ export type Category =
   | "Very Poor"
   | "Severe";
 
-export type Profile = "general" | "sensitive";
+export type Profile = "standard" | "sensitive";
 
-export type Verdict = "good_to_go" | "take_care" | "stay_indoors";
+export type Verdict = "Good to go" | "Take care" | "Stay indoors if you can";
 
-export type Confidence = "high" | "moderate" | "low";
+export type Confidence = "High" | "Medium" | "Low";
 
-/** Canonical hour-precision ISO string: YYYY-MM-DDTHH */
+/** Canonical hour-precision ISO string: YYYY-MM-DDTHH or YYYY-MM-DDTHH:00 */
 export type WallClock = string;
 
 export interface HourPoint {
@@ -24,47 +24,80 @@ export interface HourPoint {
   windDirection10m?: number;
   surfacePressure?: number;
   temperature2m?: number;
+  apparentTemperature?: number;
+  uvIndex?: number;
+  precipitationProbability?: number;
 }
 
 export interface StationReading {
-  stationId: string;
-  stationName: string;
-  distanceKm: number;
+  id?: number | string;
+  stationId?: string;
+  name: string;
+  stationName?: string;
+  lat: number;
+  lon: number;
+  distanceKm?: number;
   bearingDeg?: number;
-  measuredAt: string; // ISO 8601
+  measuredAt: string; // ISO 8601 UTC
+  measuredAtUtc?: string;
   pm25: number;
+  units?: string;
+  provider?: string;
 }
 
 export interface EffectivePm25 {
-  value: number;
+  pm25: number;
+  value?: number;
+  source: "station" | "model";
+  basis?: "station" | "model" | "blended";
+  sourceName?: string;
+  measuredAt: string; // ISO 8601 UTC
+  station?: {
+    id?: number | string;
+    name: string;
+    distanceKm: number;
+    provider?: string;
+  };
+  modelDistanceNote?: "~45 km";
   confidence: Confidence;
-  basis: "station" | "model" | "blended";
-  sourceName: string;
-  measuredAt?: string;
-  ratio?: number; // station / model
+  ratio?: number | null; // station / model
 }
 
 export interface Tip {
   id: string;
+  cite: string;
   text: string;
   priority: number;
 }
 
 export interface BestWindow {
-  start: WallClock;
-  end: WallClock;
-  avgPm25: number;
-  deltaPercent: number; // vs current PM2.5
+  startWall: WallClock;
+  endWall: WallClock;
+  meanPm25: number;
+  improvementPct: number; // e.g. 0.20 for 20%
 }
 
 export interface ReasonLinesInput {
   effective: EffectivePm25;
   category: Category;
   profile: Profile;
-  verdict: Verdict;
-  windSpeed?: number;
-  windDirection?: number;
+  next6hPeakWorse?: boolean;
+  stationModelRatio?: number | null;
   nowMs: number;
+  tomorrow?: {
+    daytimeMean: number;
+    peakHourLabel: string;
+    peakCategory: Category;
+  };
+}
+
+export interface TomorrowTabResult {
+  verdict: Verdict;
+  category: Category;
+  daytimeMean: number;
+  reasonLines: [string, string];
+  peakHourLabel: string;
+  peakCategory: Category;
 }
 
 export interface PlaceSearchResult {
