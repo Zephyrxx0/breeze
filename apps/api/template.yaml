@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Breeze API Lambda and Function URL
+
+Parameters:
+  OpenAqApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenAQ v3 API key
+    Default: ""
+  AllowedOrigin:
+    Type: String
+    Description: Allowed frontend CORS origin
+    Default: "*"
+
+Resources:
+  BreezeApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: lambda.handler
+      Runtime: nodejs24.x
+      Architectures:
+        - arm64
+      MemorySize: 512
+      Timeout: 10
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          OPENAQ_API_KEY: !Ref OpenAqApiKey
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - !Ref AllowedOrigin
+            - "http://localhost:5173"
+          AllowMethods:
+            - GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2023
+        Format: esm
+        Sourcemap: false
