@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/dev.ts"
+    "dev": "tsx watch src/dev.ts",
+    "build": "esbuild src/lambda.ts --bundle --platform=node --target=es2023 --format=esm --outfile=dist/lambda.mjs --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --minify"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   },
   "dependencies": {
     "@breeze/core": "workspace:*",

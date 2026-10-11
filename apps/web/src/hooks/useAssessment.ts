@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import type { AssessResponse } from "@breeze/core";
 
 export async function fetchAssessment(lat: number, lon: number): Promise<AssessResponse> {
-  const res = await fetch(`/api/assess?lat=${lat}&lon=${lon}`);
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+  const res = await fetch(`${apiBase}/api/assess?lat=${lat}&lon=${lon}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch assessment: ${res.statusText}`);
   }

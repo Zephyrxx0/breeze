@@ -17,7 +17,7 @@ Resources:
   BreezeApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: .
+      CodeUri: dist
       Handler: lambda.handler
       Runtime: nodejs24.x
       Architectures:
@@ -36,12 +36,8 @@ Resources:
             - "http://localhost:5173"
           AllowMethods:
             - GET
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        EntryPoints:
-          - src/lambda.ts
-        Minify: true
-        Target: es2023
-        Format: esm
-        Sourcemap: false
+
+Outputs:
+  FunctionUrl:
+    Description: Lambda Function URL endpoint
+    Value: !GetAtt BreezeApiUrl.FunctionUrl
