@@ -49,16 +49,16 @@ Full 12-place smoke script (→ Phase 3 pre-deploy gate); FIRMS key/panel (P2/v2
 
 Phase 1 builds two load-bearing pieces greenfield: `@breeze/core` (pure TypeScript decision engine — CPCB categorisation, verdict matrix, effective-PM2.5 selection, best window, tip rules, geo math, and all user-visible English strings) and `apps/api` (Hono `GET /api/assess` that zod-validates input against the India bbox, checks a per-section in-memory TTL cache, fans out to three Phase-1 upstream clients via `Promise.allSettled` with 4 s aborts, and normalises into the PRD §12 `AssessResponse` with per-section ok/stale/unavailable). The critical correctness insight — resolved in this research — is that **timezone independence must be achieved by construction, not by testing**: the Open-Meteo wall-clock-string quirk (Pitfall 1) is eliminated if `@breeze/core` receives `utcOffsetSeconds` from the API and converts instants to place-local wall clock with pure arithmetic, then does all day-boundary logic as integer/string arithmetic on hour indices. That makes the TZ=UTC vs TZ=Asia/Kolkata requirement trivially satisfied and the tests deterministic.
 
-Everything else is straight execution of pre-paid research: upstream contracts are verified (STACK.md, HIGH), Hono's Lambda adapter is a two-line entry (`handle(app)` — verified against hono.dev docs this session), Vitest 5 supports monorepo `test.projects`, and SAM's esbuild bundler needs `--build-in-source` for pnpm workspace symlinks (verified against official AWS SAM docs this session). The genuinely new decisions for the planner are: (a) add `utcOffsetSeconds` to `AssessResponse.location` (small schema extension of PRD §12 — see Open Questions #1), (b) run the smoke script as a self-contained orchestrator that spawns its own blackholed server instance for the fail-soft proof, and (c) run `sam build` (local dry-run, no deploy) at the end of 01-03 to de-risk bundling a day before the Sat deploy gate.
+Everything else is straight execution of pre-paid research: upstream contracts are verified (STACK.md, HIGH), Hono's Lambda adapter is a two-line entry (`handle(app)` — verified against hono.dev docs this session), Vitest 5 supports monorepo `test.projects`, and SAM's esbuild bundler needs `--build-in-source` for pnpm workspace symlinks (verified against official AWS SAM docs this session). The genuinely new decisions for the planner are: (a) add `utcOffsetSeconds` to `AssessResponse.location` (small schema extension of PRD §12 — see Open Questions #1), (b) run the smoke script as a self-contained orchestrator that spawns its own blackholed server instance for the fail-soft proof, and (c) run `sam build` (local dry-run, no deploy) at the end of 01-04 to de-risk bundling a day before the Sat deploy gate.
 
-**Primary recommendation:** implement the whole core on `utcOffsetSeconds`-based wall-clock arithmetic (never `new Date(upstreamString)`), author `template.yaml` + a local `sam build --build-in-source` dry-run inside plan 01-03, and make `smoke-live.ts` spawn its own blackhole server (`OPENAQ_BASE_URL=http://10.255.255.1`) so fail-soft is proven by assertion, not by reading code.
+**Primary recommendation:** implement the whole core on `utcOffsetSeconds`-based wall-clock arithmetic (never `new Date(upstreamString)`), author `template.yaml` + a local `sam build --build-in-source` dry-run inside plan 01-04, and make `smoke-live.ts` spawn its own blackhole server (`OPENAQ_BASE_URL=http://10.255.255.1`) so fail-soft is proven by assertion, not by reading code.
 
 ## Architectural Responsibility Map
 
 | Capability | Primary Tier | Secondary Tier | Rationale |
 |------------|-------------|----------------|-----------|
 | CPCB category / sub-index / verdict matrix | Browser (via @breeze/core) | — | ADR-0001: server never computes verdicts; core ships in the client bundle |
-| Effective-PM2.5 selection (§7.3 ladder) | Browser (via @breeze/core) | — | Pure function over normalised data; instant Sensitive recompute depends on it being client-side |
+| Effective-PM2.5 selection (§7.3 ladder) | Browser (via @breeze/core) | API (invokes `selectEffectivePm25` in `routes/assess.ts`) | Pure function over normalised data; instant Sensitive recompute depends on it being client-side. **Annotate:** the API is a *secondary consumer* — it calls the core function (it does not reimplement the ladder, preserving ADR-0001) to emit the headline `pm25` in `AssessResponse`, so both tiers touch this row |
 | Best window, tips, reason lines, Tomorrow derivation | Browser (via @breeze/core) | — | Same ADR-0001 boundary; core emits final English strings (D-04) |
 | Wall-clock/timezone arithmetic | Browser (via @breeze/core) | API (passes `utcOffsetSeconds`) | Core must be TZ-immune by construction; API sources the offset from Open-Meteo responses |
 | Input validation (lat/lon, India bbox) | API / Backend | — | Server rejects before any upstream call; SSRF-adjacent abuse + OpenAQ 500s prevented |
@@ -309,7 +309,7 @@ export function bearingDeg(a: {lat:number;lon:number}, b: {lat:number;lon:number
 export function isUpwind(bearingFromPoint: number, windFromDeg: number, maxDeg = 45): boolean;  // P2, tiny
 ```
 
-**When to use:** These are the contract between plans 01-01, 01-02, 01-03 and Phase 2. The API imports only *types* from core; it never calls verdict functions (ADR-0001).
+**When to use:** These are the contract between plans 01-02/01-03 (core), 01-04 (API), 01-05 (assess) and Phase 2. The API imports only *types* from core; it never calls verdict functions (ADR-0001).
 
 ### Pattern 3: Per-section TTL cache (Lambda-safe)
 
@@ -413,7 +413,7 @@ Phase 3 reuses the same script against the deployed Function URL via `SMOKE_BASE
 
 ### Pitfall 4: ESM/workspace resolution in three different runners
 **What goes wrong:** `@breeze/core` resolves under vitest+tsx but breaks in SAM's esbuild bundle (pnpm symlinks not mounted) or in Vite's pre-bundle.
-**How to avoid:** real `workspace:*` dep + `exports → src/index.ts` + `"type": "module"`; local `sam build --build-in-source` dry-run at the end of 01-03 (verified flag per AWS docs, this session); hello-web shell proves the Vite path in 01-01 (D-12).
+**How to avoid:** real `workspace:*` dep + `exports → src/index.ts` + `"type": "module"`; local `sam build --build-in-source` dry-run at the end of 01-04 (verified flag per AWS docs, this session); hello-web shell proves the Vite path in 01-01 (D-12).
 
 ### Pitfall 5: Fail-soft tested by reading code instead of breaking things
 **What goes wrong:** "We used allSettled so it degrades" — until a timeout path was never actually exercised and one upstream hangs past the Lambda timeout in the demo.
@@ -511,24 +511,28 @@ export async function fetchOpenAq(lat: number, lon: number, o: { signal: AbortSi
 | A1 | `AssessResponse.location` gains `utcOffsetSeconds: number` (from Open-Meteo `utc_offset_seconds`) — a small extension of PRD §12's shape, required for the TZ-immune core design | Pattern 1 | MEDIUM — if rejected, core needs `Intl.DateTimeFormat` offset lookup per place (more moving parts, still workable) |
 | A2 | `smoke-live.ts` runs via `tsx` root devDependency (not global; Node 22.22 native `.ts` execution exists as fallback — verified working this session) | Standard Stack | LOW — native strip works locally but has node_modules/enum caveats |
 | A3 | OpenAQ flow = 1 bbox call + parallel `/latest` for up to 3 nearest locations (PRD §8 shows singular `{id}/latest`, but §7.3 median-of-nearest-3 needs 3) | Pitfall 3 | LOW — call count (4/miss) is far under the 60/min limit; alternate design fetches 1 latest and drops the median path near metros |
-| A4 | `template.yaml` is authored and `sam build --build-in-source` dry-run (no deploy) is verified inside plan 01-03, one day before the Phase 3 deploy gate | Pitfall 4 | LOW — deferring all bundling knowledge to Phase 3 is the riskier alternative |
+| A4 | `template.yaml` is authored and `sam build --build-in-source` dry-run (no deploy) is verified inside plan 01-04, one day before the Phase 3 deploy gate | Pitfall 4 | LOW — deferring all bundling knowledge to Phase 3 is the riskier alternative |
 | A5 | The 10 "too-new" SUS legitimacy verdicts are age-heuristic false positives on established packages (all docs-confirmed, 8M–334M wk downloads) — one consolidated human-verify, not 10 gates | Legitimacy Audit | LOW — versions are same-day-pinned from the npm registry in STACK.md |
 
-## Open Questions
+## Open Questions (RESOLVED — all four adopted during planning; adopting plan annotated per question)
 
-1. **Add `utcOffsetSeconds` to `AssessResponse.location`?**
+1. **Add `utcOffsetSeconds` to `AssessResponse.location`?** — **RESOLVED: yes, extended (A1 adopted).**
    - What we know: PRD §12 lists `location: { lat, lon, timezone }`; Open-Meteo responses carry `utc_offset_seconds` (HIGH, STACK.md).
    - What's unclear: whether the planner may extend the §12 shape in Phase 1 or must wait for a spec tweak.
    - Recommendation: **extend it now** (A1) — one field, sourced from an upstream we already call; it is the linchpin of TZ-immune core. Phase 2's chart night-shading needs it too.
+   - **Adopting plans: 01-02** (core `wallclock.ts` consumes the offset as its only TZ input) **and 01-05** (`AssessResponseSchema` ships `location.utcOffsetSeconds`).
 
 2. **Smoke server lifecycle.** 01-CONTEXT.md says smoke targets the `pnpm dev` server; the fail-soft section needs a *second, blackholed* server anyway.
    - Recommendation: smoke self-spawns both instances (Pattern 5) and treats `SMOKE_BASE_URL` as the Phase-3 override; `pnpm dev` stays the human dev loop. Keeps `pnpm smoke` one-command reproducible.
+   - **RESOLVED — adopting plan: 01-06.** The recommendation is implemented as THREE self-spawned instances per run: `:8788` normal, `:8789` `OPENAQ_BASE_URL` blackhole (model-only degrade), `:8790` `AIR_BASE_URL` blackhole (station-only degrade); `SMOKE_BASE_URL` remains the Phase-3 override.
 
 3. **Severe-band sub-index cap.** PRD §7.1 gives Severe sub-index 401–500 for "above 250" with no upper concentration bound.
    - Recommendation: map (250, 500 µg/m³] → 401–500 and cap at 500 above that (matches CPCB calculator); verify one Severe golden value during 01-01.
+   - **RESOLVED — adopting plan: 01-02** (`category.ts` `subIndex` cap + CPCB golden tests, incl. the Severe cap case, live in the core-foundation plan; the original "during 01-01" note predates the core split).
 
 4. **Local Node 22.22.2 vs Lambda nodejs24.x.** Dev machine is on 22.22 (≥ Vite 8's 22.12 floor — fine); prod runtime is 24.
    - Recommendation: acceptable for Phase 1 (no 24-only APIs needed); note in README; Phase 3 deploy must not depend on Node 22-vs-24 behavioral differences (there are none for this code).
+   - **RESOLVED — adopting plan: 01-01** (README note folded into the scaffold plan's acceptance criteria).
 
 ## Environment Availability
 

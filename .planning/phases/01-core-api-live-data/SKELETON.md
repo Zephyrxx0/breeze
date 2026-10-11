@@ -17,7 +17,7 @@ The generic skeleton template expects scaffold + routing + one real DB read/writ
 | UI interaction | Debug-grade **plain-text** verdict render in `apps/web` — no product UI (01-CONTEXT D-12). Rendering the verdict string proves ADR-0001's browser-import of `@breeze/core`, which is this skeleton's whole point. Phase 2 builds the real verdict card on top. | D-12 + ADR-0001 |
 | Deployment to a dev environment | **No deploy until Phase 3.** The Phase-1 proof is the documented local full-stack run: `pnpm dev` (API :8787 + Vite :5173 + core watch) and `pnpm smoke` (self-spawned servers, live upstreams). | ROADMAP phase order; Sat 6 PM cut rule |
 
-> Checkboxes in "Stack Touched in Phase 1" are ticked by plan `01-05` during execution as each item is verified.
+> Checkboxes in "Stack Touched in Phase 1" are ticked by plan `01-06` during execution as each item is verified.
 
 ## Architectural Decisions
 

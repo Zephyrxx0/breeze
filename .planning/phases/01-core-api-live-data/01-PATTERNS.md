@@ -27,33 +27,33 @@ Do **not** fabricate code analogs. When the executor reaches for "an existing fi
 | `vitest.config.ts` | 01-01 | config | — | RESEARCH Code Example "Vitest monorepo + TZ-diff invocation" (`test.projects`) | spec-exact |
 | `.env` + `.gitignore` | 01-01 | config | — | D-10 + RESEARCH Pitfall 6 (OPENAQ_API_KEY gitignored from first commit) | spec-exact |
 | `packages/core/package.json` | 01-01 | config | — | RESEARCH Pitfall 4 (`exports "." → ./src/index.ts`, `"type":"module"`, no build step) | spec-exact |
-| `packages/core/src/index.ts` | 01-01 | library entry | transform | PRD §11 core function list | spec-exact |
-| `packages/core/src/config.ts` | 01-01 | config/constants | — | PRD §7.1/§7.5 + RESEARCH Code Example "CPCB categorisation" (BANDS table) | spec-exact |
-| `packages/core/src/types.ts` | 01-01 | model | transform | RESEARCH Pattern 2 type block (`Category`, `Profile`, `Verdict`, `Confidence`, …) | spec-exact |
-| `packages/core/src/wallclock.ts` | 01-01 | utility | transform | RESEARCH Pattern 1 (`parseWall` / `wallFromInstant` — THE TZ pattern) | spec-exact |
-| `packages/core/src/category.ts` | 01-01 | pure function | transform | PRD §7.1 + RESEARCH Code Example "CPCB categorisation" | spec-exact |
-| `packages/core/src/verdict.ts` | 01-01 | pure function | transform | PRD §7.2 12-cell matrix + D-01/D-02/D-06/D-07 + RESEARCH Pattern 2 `reasonLines` | spec-exact |
-| `packages/core/src/effective.ts` | 01-01 | pure function | transform | PRD §7.3 selection ladder + RESEARCH Pattern 2 `selectEffectivePm25` | spec-exact |
-| `packages/core/src/window.ts` | 01-01 | pure function | transform | PRD §7.4 + RESEARCH Pattern 2 `bestWindow` (null below 15%) | spec-exact |
-| `packages/core/src/tips.ts` | 01-01 | pure function | rules/transform | PRD §7.5 verbatim + D-03 cite-prefix + RESEARCH Pattern 2 `Tip`/`formatTip` | spec-exact |
-| `packages/core/src/geo.ts` | 01-01 | utility | math/transform | PRD §11 (`haversineKm`, `bearingDeg`, `isUpwind`) + RESEARCH "Don't Hand-Roll" row | spec-exact |
-| `packages/core/test/*` | 01-01 | test | — | PRD §17 boundary table + RESEARCH `test:tz` double-run invocation | spec-exact |
-| `apps/api/package.json` | 01-02 | config | — | RESEARCH install block (`hono`, `@hono/aws-lambda`, `@hono/node-server`, `zod`, `"@breeze/core":"workspace:*"`) | spec-exact |
-| `apps/api/src/app.ts` | 01-03 | controller (app root) | request-response | PRD §11 `app.ts` + RESEARCH Anti-Patterns (NO `cors()` in Phase 1, `onError`) | spec-exact |
-| `apps/api/src/lambda.ts` | 01-03 | entry/adapter | request-response | RESEARCH Code Example "Hono Lambda entrypoints" (`handle(app)`, hono.dev-verified) | spec-exact |
-| `apps/api/src/dev.ts` | 01-01 | entry/dev server | request-response | RESEARCH Code Example "local dev entrypoint" (`serve({fetch: app.fetch, port})`) | spec-exact |
-| `apps/api/src/routes/assess.ts` | 01-03 | route/controller | request-response (fan-out) | PRD §12 contract + RESEARCH Pattern 4 (validate→cache→allSettled→normalise) | spec-exact |
-| `apps/api/src/routes/health.ts` | 01-03 | route | request-response | PRD §12 last line (`GET /api/health` → ok, time, build version) | spec-exact |
-| `apps/api/src/cache.ts` | 01-03 | store (TTL cache) | cache/stale-fallback | RESEARCH Pattern 3 (per-section TTL Map, stale ≤3 h + ageMin) | spec-exact |
-| `apps/api/src/clients/openmeteoAir.ts` | 01-02 | client/service | fetch→transform | PRD §11 client contract + PRD §8 row 1 + STACK.md quirks (wall-clock, `timeformat=unixtime`) | spec-exact |
-| `apps/api/src/clients/openmeteoForecast.ts` | 01-02 | client/service | fetch→transform | PRD §11 client contract + PRD §8 row 2 + STACK.md (`daily` requires `timezone`) | spec-exact |
-| `apps/api/src/clients/openaq.ts` | 01-02 | client/service | fetch→transform | RESEARCH Code Example "Blackhole base-URL override in a client" + Pitfall 3 (bbox order, units) | spec-exact |
-| `apps/api/template.yaml` | 01-03 | config/IaC | — | PRD §13 SAM sketch + STACK.md (nodejs24.x arm64, `@hono/aws-lambda`) + RESEARCH A4 (`--build-in-source` dry-run) | spec-exact (PRD sketch needs runtime bump to nodejs24.x) |
-| `apps/api/test/*` | 01-03 | test | — | RESEARCH Pitfall 5 (blackhole fail-soft asserted as unit test) + PRD §17 | spec-exact |
-| `apps/web/*` (Vite+React shell) | 01-01 | component/shell | browser bundle | D-12 (hello-world only; imports `@breeze/core` to prove ADR-0001 browser path) + STACK.md pins | spec-exact |
-| `scripts/smoke-live.ts` | 01-02 | script (orchestrator) | live HTTP + process spawn | D-08/D-09/D-10 + RESEARCH Pattern 5 (4-place smoke + self-spawned blackhole server) | spec-exact |
+| `packages/core/src/index.ts` | 01-02 | library entry | transform | PRD §11 core function list | spec-exact |
+| `packages/core/src/config.ts` | 01-02 | config/constants | — | PRD §7.1/§7.5 + RESEARCH Code Example "CPCB categorisation" (BANDS table) | spec-exact |
+| `packages/core/src/types.ts` | 01-02 | model | transform | RESEARCH Pattern 2 type block (`Category`, `Profile`, `Verdict`, `Confidence`, …) | spec-exact |
+| `packages/core/src/wallclock.ts` | 01-02 | utility | transform | RESEARCH Pattern 1 (`parseWall` / `wallFromInstant` — THE TZ pattern) | spec-exact |
+| `packages/core/src/category.ts` | 01-02 | pure function | transform | PRD §7.1 + RESEARCH Code Example "CPCB categorisation" | spec-exact |
+| `packages/core/src/verdict.ts` | 01-03 | pure function | transform | PRD §7.2 12-cell matrix + D-01/D-02/D-06/D-07 + RESEARCH Pattern 2 `reasonLines` | spec-exact |
+| `packages/core/src/effective.ts` | 01-03 | pure function | transform | PRD §7.3 selection ladder + RESEARCH Pattern 2 `selectEffectivePm25` | spec-exact |
+| `packages/core/src/window.ts` | 01-03 | pure function | transform | PRD §7.4 + RESEARCH Pattern 2 `bestWindow` (null below 15%) | spec-exact |
+| `packages/core/src/tips.ts` | 01-03 | pure function | rules/transform | PRD §7.5 verbatim + D-03 cite-prefix + RESEARCH Pattern 2 `Tip`/`formatTip` | spec-exact |
+| `packages/core/src/geo.ts` | 01-02 | utility | math/transform | PRD §11 (`haversineKm`, `bearingDeg`, `isUpwind`) + RESEARCH "Don't Hand-Roll" row | spec-exact |
+| `packages/core/test/*` | 01-02/01-03 | test | — | PRD §17 boundary table + RESEARCH `test:tz` double-run invocation | spec-exact |
+| `apps/api/package.json` | 01-01 | config | — | RESEARCH install block (`hono`, `@hono/aws-lambda`, `@hono/node-server`, `zod`, `"@breeze/core":"workspace:*"`) | spec-exact |
+| `apps/api/src/app.ts` | 01-04 | controller (app root) | request-response | PRD §11 `app.ts` + RESEARCH Anti-Patterns (NO `cors()` in Phase 1, `onError`) | spec-exact |
+| `apps/api/src/lambda.ts` | 01-04 | entry/adapter | request-response | RESEARCH Code Example "Hono Lambda entrypoints" (`handle(app)`, hono.dev-verified) | spec-exact |
+| `apps/api/src/dev.ts` | 01-04 | entry/dev server | request-response | RESEARCH Code Example "local dev entrypoint" (`serve({fetch: app.fetch, port})`) | spec-exact |
+| `apps/api/src/routes/assess.ts` | 01-05 | route/controller | request-response (fan-out) | PRD §12 contract + RESEARCH Pattern 4 (validate→cache→allSettled→normalise) | spec-exact |
+| `apps/api/src/routes/health.ts` | 01-04 | route | request-response | PRD §12 last line (`GET /api/health` → ok, time, build version) | spec-exact |
+| `apps/api/src/cache.ts` | 01-04 | store (TTL cache) | cache/stale-fallback | RESEARCH Pattern 3 (per-section TTL Map, stale ≤3 h + ageMin) | spec-exact |
+| `apps/api/src/clients/openmeteoAir.ts` | 01-04 | client/service | fetch→transform | PRD §11 client contract + PRD §8 row 1 + STACK.md quirks (wall-clock, `timeformat=unixtime`) | spec-exact |
+| `apps/api/src/clients/openmeteoForecast.ts` | 01-04 | client/service | fetch→transform | PRD §11 client contract + PRD §8 row 2 + STACK.md (`daily` requires `timezone`) | spec-exact |
+| `apps/api/src/clients/openaq.ts` | 01-04 | client/service | fetch→transform | RESEARCH Code Example "Blackhole base-URL override in a client" + Pitfall 3 (bbox order, units) | spec-exact |
+| `apps/api/template.yaml` | 01-04 | config/IaC | — | PRD §13 SAM sketch + STACK.md (nodejs24.x arm64, `@hono/aws-lambda`) + RESEARCH A4 (`--build-in-source` dry-run) | spec-exact (PRD sketch needs runtime bump to nodejs24.x) |
+| `apps/api/test/*` | 01-04 (mock helper) / 01-05 (fail-soft tests) | test | — | RESEARCH Pitfall 5 (blackhole fail-soft asserted as unit test) + PRD §17 | spec-exact |
+| `apps/web/*` (Vite+React shell; `src/lib/geocode.ts` lands in 01-04) | 01-01 | component/shell | browser bundle | D-12 (hello-world only; imports `@breeze/core` to prove ADR-0001 browser path) + STACK.md pins | spec-exact |
+| `scripts/smoke-live.ts` | 01-06 | script (orchestrator) | live HTTP + process spawn | D-08/D-09/D-10 + RESEARCH Pattern 5 (4-place smoke + self-spawned blackhole server) | spec-exact |
 
-**Plan key:** 01-01 = workspace scaffold + core · 01-02 = upstream clients + smoke · 01-03 = `GET /api/assess` (per `.planning/ROADMAP.md` Phase 1).
+**Plan key (6 plans / 5 waves):** 01-01 = workspace scaffold · 01-02 = `@breeze/core` foundation (types/config/wallclock/category/geo) · 01-03 = `@breeze/core` decision layer (verdict/effective/window/tips) · 01-04 = API scaffold + four upstream clients · 01-05 = `GET /api/assess` · 01-06 = live smoke + SKELETON.md (per `.planning/ROADMAP.md` Phase 1).
 
 ## Pattern Assignments
 
@@ -125,7 +125,7 @@ export function categoryFor(pm25: number): Category {
 //        subIndex(31)===51, subIndex(60)===100 (CPCB golden values)
 ```
 
-**Exact function surface (the contract between 01-01/01-02/01-03 and Phase 2)** — RESEARCH Pattern 2 (lines 246–310) is implementation-ready; copy the signatures verbatim:
+**Exact function surface (the contract between 01-02/01-03 (core), 01-04 (API) / 01-05 (assess) and Phase 2)** — RESEARCH Pattern 2 (lines 246–310) is implementation-ready; copy the signatures verbatim:
 - `categoryFor(pm25): Category` · `subIndex(pm25): number` — PRD §7.1
 - `verdictFor(category, profile): Verdict` — 12-cell matrix PRD §7.2 (Moderate+Sensitive=`Take care` is the commonly skipped cell)
 - `reasonLines(input): [string, string]` — **exactly 2 lines**, D-01 number-first, D-02 extras replace line 2 only, D-06 Tomorrow variant, D-07 Today-only extras
@@ -238,7 +238,7 @@ Per-client contract notes (STACK.md, HIGH — trust over PRD wording):
 
 ### `apps/api/template.yaml` — config/IaC
 
-**Analog:** PRD §13 SAM sketch (lines 337–366) with two pinned updates: **Runtime `nodejs24.x`** (STACK.md — PRD's `nodejs22.x` is stale) and `import { handle } from "@hono/aws-lambda"` (STACK "What NOT to Use"). Keep `Metadata: BuildMethod: esbuild`, `Architectures: [arm64]`, `Handler: lambda.handler`, Function URL `AuthType: NONE` + CORS params, `OPENAQ_API_KEY` env var. Plan 01-03 ends with a **local `sam build --build-in-source` dry-run** (RESEARCH A4 — flag mandatory for pnpm workspace symlinks), no deploy.
+**Analog:** PRD §13 SAM sketch (lines 337–366) with two pinned updates: **Runtime `nodejs24.x`** (STACK.md — PRD's `nodejs22.x` is stale) and `import { handle } from "@hono/aws-lambda"` (STACK "What NOT to Use"). Keep `Metadata: BuildMethod: esbuild`, `Architectures: [arm64]`, `Handler: lambda.handler`, Function URL `AuthType: NONE` + CORS params, `OPENAQ_API_KEY` env var. Plan 01-04 ends with a **local `sam build --build-in-source` dry-run** (RESEARCH A4 — flag mandatory for pnpm workspace symlinks), no deploy.
 
 ---
 
