@@ -14,6 +14,7 @@ import { LocationButton } from "./components/LocationButton";
 import { Skeletons } from "./components/Skeletons";
 import { ErrorCard } from "./components/ErrorCard";
 import { VerdictHero } from "./components/VerdictHero";
+import { ForecastChart } from "./components/ForecastChart";
 import { BestWindowChip } from "./components/BestWindowChip";
 import { TipList } from "./components/TipList";
 import { WeatherStrip } from "./components/WeatherStrip";
@@ -129,6 +130,12 @@ export function MainView() {
         ) : (
           <div className="space-y-4" id="assessment-content">
             <VerdictHero data={data} />
+            {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
+              <ForecastChart
+                hourly={data.air.model.hourly}
+                utcOffsetSeconds={data.location.utcOffsetSeconds}
+              />
+            )}
             <BestWindowChip window={assessmentDetails.cleanestWindow} />
             <TipList tips={assessmentDetails.tips} />
             <WeatherStrip weather={data.weather} />
