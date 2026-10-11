@@ -1,8 +1,16 @@
 node_modules/
 dist/
 .env
-.aws-sam/
-*.log
-
 .env.*
 !.env.example
+*.local
+
+# Build & SAM
+.aws-sam/
+*.log
+.DS_Store
+
+# Temporary & cache
+.pnpm-debug.log*
+.eslintcache
+.cache/
