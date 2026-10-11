@@ -29,12 +29,14 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
   2. Best-window and tip rules pass tests: the window is hidden below 15% improvement, a Poor-or-worse window is never presented as an invitation, and tips are capped at 5 with each citing the value that triggered it.
   3. Day boundaries (Today/Tomorrow, 06:00–20:00 mean, 05:00–21:00 window) follow the Place's local timezone — identical results under TZ=UTC and TZ=Asia/Kolkata runs.
   4. A live smoke run returns real PM2.5, forecast and weather for ≥3 Indian places spanning metro and small town, and black-holing one upstream still returns per-section ok/stale/unavailable with the station-only and model-only degrade paths intact — never a fabricated number.
-**Plans**: 3 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 01-01: Workspace scaffold + @breeze/core decision logic (category, verdict, window, tips, geo) with boundary + TZ-diff unit tests
-- [ ] 01-02: Four zod-validated upstream clients (4 s AbortController timeouts) + day-one live verification via smoke-live across place types
-- [ ] 01-03: GET /api/assess — zod + India bbox → TTL cache → Promise.allSettled → normalise, with blackhole-upstream fail-soft test
+- [ ] 01-01: Workspace scaffold (pnpm, pinned manifests, Vitest harness, D-13 scripts, .env hygiene) + consolidated package-legitimacy gate before install
+- [ ] 01-02: @breeze/core decision logic (category, verdict, reason lines, Tomorrow tab, effective-PM2.5, window, tips, geo) with boundary + TZ-diff unit tests
+- [ ] 01-03: apps/api serving scaffold (Hono app/dev/lambda, health, TTL cache, SAM template + local sam build) + four zod-validated upstream clients (4 s AbortController timeouts)
+- [ ] 01-04: GET /api/assess — two-stage zod + India bbox → TTL cache → Promise.allSettled → normalise, with blackhole-upstream fail-soft tests
+- [ ] 01-05: Day-one live verification — smoke-live across 4 place types with a self-spawned blackholed server + browser walking-skeleton render + SKELETON.md sign-off
 
 ### Phase 2: Web P0 — Search, Verdict & Forecast
 **Goal**: A user can pick any place in India and see the complete P0 assessment — reading with provenance, forecast chart, tips, weather strip, footer — end-to-end locally against live data.
@@ -112,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 (Sat 6 PM gate) → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core, API & Live Data | 0/3 | Not started | - |
+| 1. Core, API & Live Data | 0/5 | Not started | - |
 | 2. Web P0 — Search, Verdict & Forecast | 0/3 | Not started | - |
 | 3. Deploy to Public URL | 0/2 | Not started | - |
 | 4. Hardening — Toggle, Fail-Soft & A11y | 0/2 | Not started | - |

@@ -85,7 +85,7 @@ No explicit "you decide" from the user, but downstream agents retain flexibility
 - `.planning/research/SUMMARY.md` — Consolidated research incl. pre-listed fallbacks (deploy fallbacks relevant to Phase 3, not here).
 
 ### Roadmap & requirements
-- `.planning/ROADMAP.md` Phase 1 — Goal, 3 plans (01-01 core, 01-02 clients, 01-03 assess), 4 success criteria.
+- `.planning/ROADMAP.md` Phase 1 — Goal, 5 plans (01-01 scaffold, 01-02 core, 01-03 API scaffold + clients, 01-04 /api/assess, 01-05 live smoke + skeleton), 4 success criteria.
 - `.planning/REQUIREMENTS.md` — Phase 1 requirements: ASM-04, DEC-01, DEC-02, DEC-03, DEC-04.
 - `.planning/PROJECT.md` — Constraints (48h timeline, perf budget, data-honesty, privacy, budget) and the Key Decisions table.
 
