@@ -9,7 +9,7 @@ interface ErrorCardProps {
 export function ErrorCard({
   onRetry,
   title = "Can't assess right now",
-  message = "Live upstream data is temporarily unavailable. Missing data is shown honestly rather than fabricated.",
+  message = "Live upstream air data is temporarily unavailable. Missing data is shown honestly rather than fabricated.",
 }: ErrorCardProps) {
   return (
     <div className="w-full bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 text-center shadow-xs space-y-4">

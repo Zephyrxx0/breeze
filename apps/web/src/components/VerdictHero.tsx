@@ -11,6 +11,8 @@ import { ReadingBadge } from "./ReadingBadge";
 
 interface VerdictHeroProps {
   data: AssessResponse;
+  profile?: "standard" | "sensitive";
+  onProfileChange?: (profile: "standard" | "sensitive") => void;
 }
 
 const VERDICT_THEMES: Record<string, { bg: string; text: string; badgeBg: string }> = {
@@ -31,7 +33,11 @@ const VERDICT_THEMES: Record<string, { bg: string; text: string; badgeBg: string
   },
 };
 
-export function VerdictHero({ data }: VerdictHeroProps) {
+export function VerdictHero({
+  data,
+  profile = "standard",
+  onProfileChange,
+}: VerdictHeroProps) {
   const [activeTab, setActiveTab] = useState<"today" | "tomorrow">("today");
 
   const current = data.air.current;
@@ -39,15 +45,18 @@ export function VerdictHero({ data }: VerdictHeroProps) {
   const nowMs = Date.now();
   const utcOffsetSeconds = data.location.utcOffsetSeconds;
 
+  // Station-only mode check (model hourly missing or empty)
+  const isModelUnavailable = !data.air.model?.hourly || data.air.model.hourly.length === 0;
+
   // Confidence calculation
   const conf = confidenceFor({
     source: current.source,
     distanceKm: current.station?.distanceKm,
   });
 
-  // Today calculation
+  // Today calculation (using active profile)
   const todayCategory = categoryFor(current.pm25);
-  const todayVerdict = verdictFor(todayCategory, "standard");
+  const todayVerdict = verdictFor(todayCategory, profile);
   const todayReasons = reasonLines({
     effective: {
       pm25: current.pm25,
@@ -58,14 +67,13 @@ export function VerdictHero({ data }: VerdictHeroProps) {
       confidence: conf,
     },
     category: todayCategory,
-    profile: "standard",
+    profile,
     nowMs,
   });
 
   // Tomorrow calculation (from air.model.hourly)
   const hourly = data.air.model?.hourly ?? [];
   const currentWall = wallFromInstant(nowMs, utcOffsetSeconds);
-  const todayDateStr = currentWall.slice(0, 10);
 
   // Derive tomorrow's date string in location local wall clock
   const tomorrowDate = new Date(nowMs + 86400000);
@@ -84,7 +92,7 @@ export function VerdictHero({ data }: VerdictHeroProps) {
       : current.pm25;
 
   const tomorrowCategory = categoryFor(tomorrowDaytimeMean);
-  const tomorrowVerdict = verdictFor(tomorrowCategory, "standard");
+  const tomorrowVerdict = verdictFor(tomorrowCategory, profile);
 
   // Worst peak hour across all 24h of tomorrow
   let tomorrowPeakHour = "";
@@ -104,44 +112,96 @@ export function VerdictHero({ data }: VerdictHeroProps) {
       : "Model forecast for regional daytime conditions",
   ];
 
-  const activeVerdict = activeTab === "today" ? todayVerdict : tomorrowVerdict;
-  const activeReasons = activeTab === "today" ? todayReasons : tomorrowReasons;
+  // If model is unavailable, force "today" tab
+  const effectiveTab = isModelUnavailable ? "today" : activeTab;
+  const activeVerdict = effectiveTab === "today" ? todayVerdict : tomorrowVerdict;
+  const activeReasons = effectiveTab === "today" ? todayReasons : tomorrowReasons;
   const theme = VERDICT_THEMES[activeVerdict] || VERDICT_THEMES["Take care"];
 
   return (
     <div
       className={`w-full bg-gradient-to-b ${theme.bg} bg-white border rounded-3xl p-6 sm:p-7 shadow-xs space-y-5 transition-all`}
     >
-      {/* Segmented Controls for Today / Tomorrow */}
-      <div className="flex items-center justify-between">
-        <div className="inline-flex p-1 bg-slate-100 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setActiveTab("today")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              activeTab === "today"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("tomorrow")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              activeTab === "tomorrow"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Tomorrow
-          </button>
+      {/* Header controls: Profile Toggle & Today/Tomorrow Tabs */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Segmented Controls for Today / Tomorrow */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setActiveTab("today")}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  effectiveTab === "today"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => !isModelUnavailable && setActiveTab("tomorrow")}
+                disabled={isModelUnavailable}
+                title={isModelUnavailable ? "Forecast model temporarily unavailable" : undefined}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  isModelUnavailable
+                    ? "opacity-40 cursor-not-allowed text-slate-400"
+                    : effectiveTab === "tomorrow"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Tomorrow
+              </button>
+            </div>
+            {isModelUnavailable && (
+              <span className="text-xs text-amber-800 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                Forecast model temporarily unavailable
+              </span>
+            )}
+          </div>
+
+          {/* Profile Toggle Control (Standard vs Sensitive) */}
+          {onProfileChange && (
+            <div className="flex flex-col sm:items-end">
+              <div
+                className="inline-flex p-1 bg-slate-100 rounded-xl"
+                role="group"
+                aria-label="Health Sensitivity Profile"
+                aria-describedby="profile-desc"
+              >
+                <button
+                  type="button"
+                  onClick={() => onProfileChange("standard")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    profile === "standard"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onProfileChange("sensitive")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    profile === "sensitive"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Sensitive group
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          {activeTab === "today" ? "Right Now" : "Forecast"}
-        </span>
+        {/* Explanatory Caption beneath toggle */}
+        <p id="profile-desc" className="text-xs text-slate-500 leading-normal">
+          Lower thresholds for asthma, elderly, children &amp; respiratory sensitivity
+        </p>
       </div>
 
       {/* Hero Headline Verdict */}

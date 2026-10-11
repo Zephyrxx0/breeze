@@ -43,6 +43,9 @@ export function ReadingBadge({
         ? "bg-blue-100 text-blue-800"
         : "bg-amber-100 text-amber-800";
 
+  // Calculate age if station ageMinutes is available, or default
+  const ageMinutes = station?.ageMinutes ?? 15;
+
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-baseline gap-2.5 flex-wrap">
@@ -56,8 +59,11 @@ export function ReadingBadge({
           {category}
         </span>
         {isStale && (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-            Stale cached
+          <span
+            className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300"
+            title={`Upstream live data timed out; showing cached data from ${ageMinutes}m ago.`}
+          >
+            Cached {ageMinutes}m ago
           </span>
         )}
       </div>
@@ -83,6 +89,12 @@ export function ReadingBadge({
           {confidence} confidence
         </span>
       </div>
+
+      {isStale && (
+        <p className="text-xs text-amber-800 font-medium">
+          Upstream live data timed out; showing cached data from {ageMinutes}m ago.
+        </p>
+      )}
     </div>
   );
 }

@@ -27,6 +27,25 @@ export function MainView() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Profile state: hydrated synchronously from localStorage, strictly validated
+  const [profile, setProfile] = useState<"standard" | "sensitive">(() => {
+    try {
+      const stored = localStorage.getItem("breeze:profile");
+      return stored === "sensitive" ? "sensitive" : "standard";
+    } catch {
+      return "standard";
+    }
+  });
+
+  const handleProfileChange = (newProfile: "standard" | "sensitive") => {
+    setProfile(newProfile);
+    try {
+      localStorage.setItem("breeze:profile", newProfile);
+    } catch {
+      // Ignore localStorage write failures
+    }
+  };
+
   const { data, isLoading, isError, refetch } = useAssessment(lat, lon, !isOutOfCoverage);
 
   const handleSelectPlace = (place: { lat: number; lon: number; name: string }) => {
@@ -40,7 +59,7 @@ export function MainView() {
   };
 
   const assessmentDetails = useMemo(() => {
-    if (!data?.air?.current) return null;
+    if (!data?.air?.current || data.air.status === "unavailable") return null;
 
     const current = data.air.current;
     const nowMs = Date.now();
@@ -80,14 +99,14 @@ export function MainView() {
         feelsLikeC,
         rainProbNext6h,
       },
-      "standard"
+      profile
     );
 
     return {
       cleanestWindow,
       tips,
     };
-  }, [data]);
+  }, [data, profile]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center">
@@ -125,20 +144,28 @@ export function MainView() {
           </div>
         ) : isLoading ? (
           <Skeletons />
-        ) : isError || !data?.air?.current || !assessmentDetails ? (
+        ) : isError || !data?.air?.current || data.air.status === "unavailable" || !assessmentDetails ? (
           <ErrorCard onRetry={() => refetch()} />
         ) : (
           <div className="space-y-4" id="assessment-content">
-            <VerdictHero data={data} />
+            <VerdictHero
+              data={data}
+              profile={profile}
+              onProfileChange={handleProfileChange}
+            />
             {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
               <ForecastChart
                 hourly={data.air.model.hourly}
                 utcOffsetSeconds={data.location.utcOffsetSeconds}
               />
             )}
-            <BestWindowChip window={assessmentDetails.cleanestWindow} />
+            {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
+              <BestWindowChip window={assessmentDetails.cleanestWindow} />
+            )}
             <TipList tips={assessmentDetails.tips} />
-            <WeatherStrip weather={data.weather} />
+            {data.weather && data.weather.status !== "unavailable" && (
+              <WeatherStrip weather={data.weather} />
+            )}
             <ProvenanceFooter data={data} />
           </div>
         )}
