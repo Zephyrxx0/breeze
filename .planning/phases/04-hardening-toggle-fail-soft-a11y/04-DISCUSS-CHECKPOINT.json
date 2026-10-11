@@ -1,0 +1,27 @@
+{
+  "phase": "4",
+  "areas_completed": [
+    "Sensitive Profile Toggle & UI Placement",
+    "Fail-Soft States & Degraded Views",
+    "Screen Reader & ARIA Strategy",
+    "WCAG AA Contrast & Focus Ring System"
+  ],
+  "decisions": {
+    "toggle_placement": "Directly on the VerdictHero card right above or beside the Today/Tomorrow tabs for immediate context.",
+    "toggle_control": "Segmented button control ('Standard' | 'Sensitive group') with subtle active pill styling matching Today/Tomorrow.",
+    "toggle_persistence": "Device-local localStorage key `breeze:profile` ('standard' | 'sensitive'), defaulting to 'standard' if unset, read synchronously on mount.",
+    "toggle_explanation": "Subtle explanatory caption directly under the toggle ('Lower thresholds for asthma, elderly, children & respiratory sensitivity') linked via aria-describedby.",
+    "stale_cache_ui": "Warm amber pill badge 'Cached Xm ago' directly on the reading card, with an explicit tooltip/subtext stating that upstream live data timed out and cached values are being used.",
+    "total_failure_ui": "Dedicated ErrorCard with 'Can't assess right now — live upstream air data is temporarily unavailable', a prominent Retry button, and zero numbers or synthetic verdicts displayed.",
+    "station_only_degrade": "Show Today verdict & reading cleanly from the station; hide ForecastChart, BestWindow chip, and Tomorrow tab, with an inline note: 'Forecast model temporarily unavailable'.",
+    "model_only_degrade": "Render complete experience (Today, Tomorrow, 48h chart, best window, tips) labelled honestly as 'Regional model estimate (~45 km)' with Low confidence chip.",
+    "verdict_aria_announcement": "aria-live='polite' region on verdict card announcing upon load and tab switch: '[Today/Tomorrow]: [Verdict], PM2.5 [X] µg/m³, [Category], [Top reason]'.",
+    "profile_toggle_announcement": "Trigger polite aria-live update: 'Profile updated to Sensitive group. Recalculated verdict: [New Verdict]'.",
+    "chart_scrub_announcement": "Debounced (100–150ms) polite live announcement on Arrow key scrub: '[Day] [Hour]: [PM2.5] µg/m³, [Category]'.",
+    "aria_region_dom_placement": "Dedicated visually-hidden (<span className='sr-only' aria-live='polite' aria-atomic='true'>) region at the top of the main container for routing/status notifications.",
+    "contrast_audit": "Audit every text/bg combination against 4.5:1 (normal text) and 3:1 (large text/ui components), darkening text hues (e.g. amber-950, emerald-950, rose-950) with soft tinted backgrounds.",
+    "focus_ring_system": "Standardized high-contrast focus ring: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2` across all interactive elements.",
+    "reduced_motion": "Explicit CSS `@media (prefers-reduced-motion: reduce)` rules that disable pulsing animations on Skeletons and instant-jump SVG tooltip and tab transitions.",
+    "non_color_signals": "Triad pattern everywhere: Every category display features Category Name (Text) + Numerical PM2.5 + Distinct Icon (Checkmark / Alert / Hazard) alongside color."
+  }
+}
