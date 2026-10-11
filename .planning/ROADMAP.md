@@ -74,9 +74,9 @@ Plans:
 
 Plans:
 
-- [ ] 02-01: URL-as-state router, place search + use-my-location + reverse label, TanStack Query wiring with explicit non-default config, skeletons + per-section states
-- [ ] 02-02: Verdict card surface with current reading (source badge + confidence chip), rule-driven tips, weather strip, provenance footer
-- [ ] 02-03: 48-h SVG forecast chart with bands, now marker, night shading, tooltip, keyboard-focusable points
+- [x] 02-01: URL-as-state router, place search + use-my-location + reverse label, TanStack Query wiring with explicit non-default config, skeletons + per-section states
+- [x] 02-02: Verdict card surface with current reading (source badge + confidence chip), rule-driven tips, weather strip, provenance footer
+- [x] 02-03: 48-h SVG forecast chart with bands, now marker, night shading, tooltip, keyboard-focusable points
 
 ### Phase 3: Deploy to Public URL
 

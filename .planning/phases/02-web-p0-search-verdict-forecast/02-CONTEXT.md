@@ -113,3 +113,4 @@ Downstream agents retain flexibility on exact CSS animation timing/easings for s
 
 *Phase: 2-Web P0 — Search, Verdict & Forecast*
 *Context gathered: 2026-10-11*
+

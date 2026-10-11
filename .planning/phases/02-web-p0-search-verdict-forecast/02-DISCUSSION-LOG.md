@@ -162,3 +162,4 @@ Downstream agents retain flexibility on exact CSS animation timing/easings for s
 - Sensitive profile toggle and WCAG AA accessibility audit (Phase 4).
 - 1080x1350 PNG share card with html-to-image and saved place chips (Phase 5).
 - NASA FIRMS fire detection heuristic panel (P2 / v2).
+
