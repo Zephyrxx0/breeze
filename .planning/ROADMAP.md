@@ -124,7 +124,15 @@ Plans:
 
 Plans:
 
+- [ ] 04-01-PLAN.md
+- [ ] 04-02-PLAN.md
+
+**Wave 1**
+
 - [ ] 04-01: Sensitive toggle with zero-refetch assertion + fail-soft states (total-failure Retry card, stale age labels, per-section unavailable rendering)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04-02: Accessibility pass — contrast-validated tokens, colour+icon+word verdict, aria-live, keyboard path incl. chart, reduced motion, Lighthouse a11y ≥90
 
 ### Phase 5: Sharing & Submission

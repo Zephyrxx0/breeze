@@ -112,3 +112,4 @@ Downstream agents retain discretion on exact icon choices (Lucide SVG variants f
 
 *Phase: 4-Hardening — Toggle, Fail-Soft & A11y*
 *Context gathered: 2026-10-11*
+
