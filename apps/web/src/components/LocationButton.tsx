@@ -51,7 +51,7 @@ export function LocationButton({ onLocationFound, onError }: LocationButtonProps
       type="button"
       onClick={handleGetLocation}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3.5 py-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:text-slate-900 shadow-xs transition-colors shrink-0 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 px-3.5 py-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:text-slate-900 shadow-xs transition-colors shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       title="Use my location"
       aria-label="Use my location"
     >

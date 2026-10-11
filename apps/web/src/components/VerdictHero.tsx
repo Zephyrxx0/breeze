@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import {
   categoryFor,
   verdictFor,
@@ -13,23 +14,39 @@ interface VerdictHeroProps {
   data: AssessResponse;
   profile?: "standard" | "sensitive";
   onProfileChange?: (profile: "standard" | "sensitive") => void;
+  onAnnounce?: (message: string) => void;
 }
 
-const VERDICT_THEMES: Record<string, { bg: string; text: string; badgeBg: string }> = {
+const VERDICT_THEMES: Record<
+  string,
+  {
+    bg: string;
+    text: string;
+    badgeBg: string;
+    icon: typeof CheckCircle2;
+    iconColor: string;
+  }
+> = {
   "Good to go": {
     bg: "from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-200",
-    text: "text-emerald-900",
+    text: "text-emerald-950",
     badgeBg: "bg-emerald-600 text-white",
+    icon: CheckCircle2,
+    iconColor: "text-emerald-600",
   },
   "Take care": {
     bg: "from-amber-500/10 via-amber-500/5 to-transparent border-amber-200",
     text: "text-amber-950",
     badgeBg: "bg-amber-600 text-white",
+    icon: AlertCircle,
+    iconColor: "text-amber-600",
   },
   "Stay indoors if you can": {
     bg: "from-rose-500/10 via-rose-500/5 to-transparent border-rose-200",
     text: "text-rose-950",
     badgeBg: "bg-rose-600 text-white",
+    icon: AlertTriangle,
+    iconColor: "text-rose-600",
   },
 };
 
@@ -37,6 +54,7 @@ export function VerdictHero({
   data,
   profile = "standard",
   onProfileChange,
+  onAnnounce,
 }: VerdictHeroProps) {
   const [activeTab, setActiveTab] = useState<"today" | "tomorrow">("today");
 
@@ -117,6 +135,31 @@ export function VerdictHero({
   const activeVerdict = effectiveTab === "today" ? todayVerdict : tomorrowVerdict;
   const activeReasons = effectiveTab === "today" ? todayReasons : tomorrowReasons;
   const theme = VERDICT_THEMES[activeVerdict] || VERDICT_THEMES["Take care"];
+  const VerdictIcon = theme.icon;
+
+  // Emit announcement on tab / data changes
+  useEffect(() => {
+    if (!onAnnounce) return;
+    const tabName = effectiveTab === "today" ? "Today" : "Tomorrow";
+    const pmVal = effectiveTab === "today" ? Math.round(current.pm25) : Math.round(tomorrowDaytimeMean);
+    const catName = effectiveTab === "today" ? todayCategory : tomorrowCategory;
+    const topReason = activeReasons[0] || "";
+    onAnnounce(`${tabName}: ${activeVerdict}, PM2.5 ${pmVal} µg/m³, ${catName}, ${topReason}`);
+  }, [effectiveTab, activeVerdict, todayCategory, tomorrowCategory, current.pm25, tomorrowDaytimeMean, activeReasons, onAnnounce]);
+
+  // Handle profile change and announce
+  const handleProfileSelect = (newProfile: "standard" | "sensitive") => {
+    if (!onProfileChange) return;
+    onProfileChange(newProfile);
+    if (onAnnounce) {
+      const recomputedVerdict = verdictFor(
+        effectiveTab === "today" ? todayCategory : tomorrowCategory,
+        newProfile
+      );
+      const profileLabel = newProfile === "standard" ? "Standard" : "Sensitive group";
+      onAnnounce(`Profile updated to ${profileLabel}. Recalculated verdict: ${recomputedVerdict}`);
+    }
+  };
 
   return (
     <div
@@ -127,11 +170,11 @@ export function VerdictHero({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Segmented Controls for Today / Tomorrow */}
           <div className="flex items-center gap-2">
-            <div className="inline-flex p-1 bg-slate-100 rounded-xl">
+            <div className="inline-flex p-1 bg-slate-100 rounded-xl" aria-label="Forecast day selection">
               <button
                 type="button"
                 onClick={() => setActiveTab("today")}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                   effectiveTab === "today"
                     ? "bg-white text-slate-900 shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
@@ -144,7 +187,7 @@ export function VerdictHero({
                 onClick={() => !isModelUnavailable && setActiveTab("tomorrow")}
                 disabled={isModelUnavailable}
                 title={isModelUnavailable ? "Forecast model temporarily unavailable" : undefined}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                   isModelUnavailable
                     ? "opacity-40 cursor-not-allowed text-slate-400"
                     : effectiveTab === "tomorrow"
@@ -173,8 +216,8 @@ export function VerdictHero({
               >
                 <button
                   type="button"
-                  onClick={() => onProfileChange("standard")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  onClick={() => handleProfileSelect("standard")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                     profile === "standard"
                       ? "bg-white text-slate-900 shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -184,8 +227,8 @@ export function VerdictHero({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onProfileChange("sensitive")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  onClick={() => handleProfileSelect("sensitive")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                     profile === "sensitive"
                       ? "bg-white text-slate-900 shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
@@ -204,15 +247,20 @@ export function VerdictHero({
         </p>
       </div>
 
-      {/* Hero Headline Verdict */}
-      <div>
+      {/* Hero Headline Verdict with Non-Color Semantic Icon */}
+      <div className="flex items-center gap-3">
+        <VerdictIcon
+          className={`w-8 h-8 sm:w-9 sm:h-9 ${theme.iconColor} shrink-0`}
+          aria-hidden="true"
+          data-testid="verdict-hero-icon"
+        />
         <h1 className={`text-3xl sm:text-4xl font-black tracking-tight ${theme.text}`}>
           {activeVerdict}
         </h1>
       </div>
 
       {/* Reading & Provenance Details (for Today tab) */}
-      {activeTab === "today" && (
+      {effectiveTab === "today" && (
         <ReadingBadge
           pm25={current.pm25}
           category={todayCategory}
@@ -231,4 +279,5 @@ export function VerdictHero({
     </div>
   );
 }
+
 

@@ -58,7 +58,7 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
             href="https://atmosphere.copernicus.eu/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900"
+            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             Copernicus Atmosphere Monitoring Service (CAMS)
           </a>{" "}
@@ -67,7 +67,7 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
             href="https://open-meteo.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900"
+            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             Open-Meteo
           </a>{" "}
@@ -76,7 +76,7 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
             href="https://creativecommons.org/licenses/by/4.0/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900"
+            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             CC BY 4.0
           </a>
@@ -88,7 +88,7 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
             href="https://openaq.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900"
+            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             OpenAQ
           </a>

@@ -111,7 +111,7 @@ export function SearchBox({
           value={query}
           aria-label="Search city or town in India"
           placeholder="Search place in India..."
-          className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium text-base"
+          className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all font-medium text-base"
           onFocus={() => {
             setQuery("");
             setIsOpen(true);
@@ -132,7 +132,7 @@ export function SearchBox({
               setResults([]);
               activeInputRef.current?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             <X className="w-4 h-4" />
           </button>

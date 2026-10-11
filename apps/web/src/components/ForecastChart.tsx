@@ -1,4 +1,4 @@
-import { useState, useRef, useId, useCallback } from "react";
+import { useState, useRef, useId, useCallback, useEffect } from "react";
 import { categoryFor, wallFromInstant, type AssessResponse } from "@breeze/core";
 import { ForecastTooltip, type TooltipPoint } from "./ForecastTooltip";
 
@@ -114,6 +114,7 @@ export function ForecastChart({ hourly, utcOffsetSeconds }: ForecastChartProps) 
   });
 
   const [activeIndex, setActiveIndex] = useState<number | null>(nowIndex);
+  const [debouncedAnnouncement, setDebouncedAnnouncement] = useState<string>("");
 
   // Keyboard navigation handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -201,22 +202,40 @@ export function ForecastChart({ hourly, utcOffsetSeconds }: ForecastChartProps) 
 
   const nowX = xForIndex(nowIndex, hourly.length, PLOT_LEFT, PLOT_RIGHT);
 
-  // Screen reader readout
-  const srAnnouncement = tooltipPoint
-    ? `Forecast at ${tooltipPoint.timeStr}: ${Math.round(tooltipPoint.pm25)} micrograms per cubic meter, air quality is ${categoryFor(tooltipPoint.pm25)}.`
+  // 120ms debounced live region announcement
+  useEffect(() => {
+    if (!tooltipPoint) return;
+    const cat = categoryFor(tooltipPoint.pm25);
+    const msg = `${tooltipPoint.timeStr}: ${Math.round(tooltipPoint.pm25)} µg/m³, ${cat}`;
+
+    const timer = setTimeout(() => {
+      setDebouncedAnnouncement(msg);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tooltipPoint]);
+
+  const activePm25Round = tooltipPoint ? Math.round(tooltipPoint.pm25) : 0;
+  const activeCategory = tooltipPoint ? categoryFor(tooltipPoint.pm25) : "";
+  const ariaValueText = tooltipPoint
+    ? `${tooltipPoint.timeStr}: ${activePm25Round} µg/m³, ${activeCategory}`
     : "";
 
   return (
     <div
-      className="w-full bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 relative outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="w-full bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       tabIndex={0}
-      role="region"
-      aria-label="48-hour PM2.5 forecast chart. Use left and right arrow keys to explore hourly points."
+      role="slider"
+      aria-label="48-hour PM2.5 air quality forecast chart"
+      aria-valuemin={0}
+      aria-valuemax={hourly.length - 1}
+      aria-valuenow={activeIndex ?? nowIndex}
+      aria-valuetext={ariaValueText}
       onKeyDown={handleKeyDown}
     >
       {/* Screen Reader Live Region */}
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {srAnnouncement}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {debouncedAnnouncement}
       </div>
 
       {/* Header */}

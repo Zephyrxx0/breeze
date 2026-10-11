@@ -25,6 +25,7 @@ const queryClient = new QueryClient();
 export function MainView() {
   const { lat, lon, name, isOutOfCoverage, setLocation } = useLocationParams();
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState<string>("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Profile state: hydrated synchronously from localStorage, strictly validated
@@ -44,6 +45,10 @@ export function MainView() {
     } catch {
       // Ignore localStorage write failures
     }
+  };
+
+  const handleAnnounce = (msg: string) => {
+    setAnnouncement(msg);
   };
 
   const { data, isLoading, isError, refetch } = useAssessment(lat, lon, !isOutOfCoverage);
@@ -119,6 +124,17 @@ export function MainView() {
       </header>
 
       <main className="w-full max-w-xl px-4 py-3 space-y-4 flex-1">
+        {/* Visually-Hidden Screen Reader Live Announcer Region */}
+        <div
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="aria-announcer"
+        >
+          {announcement}
+        </div>
+
         {/* Search & Location Bar */}
         <div className="flex items-center gap-2">
           <SearchBox
@@ -152,6 +168,7 @@ export function MainView() {
               data={data}
               profile={profile}
               onProfileChange={handleProfileChange}
+              onAnnounce={handleAnnounce}
             />
             {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
               <ForecastChart
