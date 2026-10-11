@@ -11,7 +11,7 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Core, API & Live Data** - Tested decision engine + live /api/assess with fail-soft orchestration (Fri eve – Sat morning)
+- [x] **Phase 1: Core, API & Live Data** - Tested decision engine + live /api/assess with fail-soft orchestration (Fri eve – Sat morning)
 - [ ] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
 - [ ] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
 - [ ] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
@@ -37,24 +37,24 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 Plans:
 **Wave 1**
 
-- [ ] 01-01: Workspace scaffold (pnpm, pinned manifests, Vitest harness, D-13 scripts, .env hygiene) + consolidated package-legitimacy gate before install
+- [x] 01-01: Workspace scaffold (pnpm, pinned manifests, Vitest harness, D-13 scripts, .env hygiene) + consolidated package-legitimacy gate before install
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02: @breeze/core foundation — types/config/wallclock/category/geo + boundary, wall-clock and geo tests
+- [x] 01-02: @breeze/core foundation — types/config/wallclock/category/geo + boundary, wall-clock and geo tests
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03: @breeze/core decision layer — verdict matrix, reason lines, Tomorrow tab, effective-PM2.5 ladder, best window, rule-driven tips + matrix/ladder/window/tip/TZ-diff tests
-- [ ] 01-04: apps/api serving scaffold (Hono app/dev/lambda, health, TTL cache, SAM template + local sam build) + four zod-validated upstream clients (4 s AbortController timeouts)
+- [x] 01-03: @breeze/core decision layer — verdict matrix, reason lines, Tomorrow tab, effective-PM2.5 ladder, best window, rule-driven tips + matrix/ladder/window/tip/TZ-diff tests
+- [x] 01-04: apps/api serving scaffold (Hono app/dev/lambda, health, TTL cache, SAM template + local sam build) + four zod-validated upstream clients (4 s AbortController timeouts)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-05: GET /api/assess — two-stage zod + India bbox → TTL cache → Promise.allSettled → normalise, with blackhole-upstream fail-soft tests + structured logs + AssessResponseSchema
+- [x] 01-05: GET /api/assess — two-stage zod + India bbox → TTL cache → Promise.allSettled → normalise, with blackhole-upstream fail-soft tests + structured logs + AssessResponseSchema
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 01-06: Day-one live verification — smoke-live across 4 place types with self-spawned blackhole servers + browser walking-skeleton render + SKELETON.md sign-off
+- [x] 01-06: Day-one live verification — smoke-live across 4 place types with self-spawned blackhole servers + browser walking-skeleton render + SKELETON.md sign-off
 
 ### Phase 2: Web P0 — Search, Verdict & Forecast
 
