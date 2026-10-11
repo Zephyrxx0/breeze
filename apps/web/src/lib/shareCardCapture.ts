@@ -127,3 +127,4 @@ function triggerDownload(blob: Blob, fileName: string): void {
     URL.revokeObjectURL(url);
   }, 1000);
 }
+

@@ -76,3 +76,4 @@ Existing test infrastructure in `@breeze/web` (`sharing-features.test.tsx`, `sha
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-10-11
+

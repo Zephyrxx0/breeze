@@ -39,3 +39,4 @@ export function Toast({ message, onDismiss, durationMs = 2500 }: ToastProps) {
     </div>
   );
 }
+

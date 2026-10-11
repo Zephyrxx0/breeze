@@ -33,3 +33,4 @@
    - Multi-timezone invariant suite: 100% green under both `TZ=UTC` and `TZ=Asia/Kolkata`.
    - Production bundle size: 127.53 kB gzipped JS (<200 kB budget target).
    - Live smoke test (`pnpm smoke`): 4 live Indian regions verified with proper degrade handling.
+

@@ -13,7 +13,7 @@ Breeze ships inside one 48-hour hackathon weekend, so the roadmap mirrors PRD §
 
 - [x] **Phase 1: Core, API & Live Data** - Tested decision engine + live /api/assess with fail-soft orchestration (Fri eve – Sat morning)
 - [x] **Phase 2: Web P0 — Search, Verdict & Forecast** - Complete P0 experience end-to-end locally (Sat midday)
-- [ ] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
+- [x] **Phase 3: Deploy to Public URL** - SAM + Amplify to a phone-verified public URL inside the Sat 6 PM cut rule (Sat afternoon)
 - [x] **Phase 4: Hardening — Toggle, Fail-Soft & A11y** - Instant Sensitive toggle, honest failure states, WCAG AA (Sat evening)
 - [x] **Phase 5: Sharing & Submission** - Deep link first, PNG card second, saved places, about sheet, then submit (Sun)
 
@@ -92,12 +92,12 @@ Plans:
   3. The performance budget holds on the deployed URL: verdict <3 s warm on 4G, API p95 ≤2.5 s warm, initial JS <200 KB gzipped, Lighthouse mobile performance ≥90.
   4. The URL is live and phone-verified by Saturday 6 PM — the cut-rule gate that unlocks Phase 5 (otherwise P1/P2 are dropped and only P0 ships).
 
-**Plans**: 1/2 plans executed
+**Plans**: 2 plans
 
 Plans:
 
 - [x] 03-01-PLAN.md
-- [ ] 03-02-PLAN.md
+- [x] 03-02-PLAN.md
 
 **Wave 1**
 
@@ -105,7 +105,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-02: Amplify connect + monorepo root + SPA rewrite + VITE_API_BASE_URL origin ordering, then phone test, signed-out deep-link check and perf-budget verification
+- [x] 03-02: Amplify connect + monorepo root + SPA rewrite + VITE_API_BASE_URL origin ordering, then phone test, signed-out deep-link check and perf-budget verification
 
 ### Phase 4: Hardening — Toggle, Fail-Soft & A11y
 

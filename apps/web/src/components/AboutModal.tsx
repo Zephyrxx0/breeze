@@ -181,3 +181,4 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
     </div>
   );
 }
+

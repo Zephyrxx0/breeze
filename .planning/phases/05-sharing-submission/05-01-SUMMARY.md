@@ -51,3 +51,4 @@
   - AboutModal rendering with all 4 sections, ESC key close, and close button click.
 - Fixed upstream mock timestamp in `apps/api/test/failsoft.test.ts` to ensure station-only degrade test runs with valid fresh readings.
 - All 16 test files (89 tests) passed cleanly across `@breeze/core`, `@breeze/api`, and `@breeze/web`.
+

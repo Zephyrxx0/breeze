@@ -78,3 +78,4 @@ export function useSavedPlaces(current: { lat: number; lon: number; name: string
     removePlace,
   };
 }
+

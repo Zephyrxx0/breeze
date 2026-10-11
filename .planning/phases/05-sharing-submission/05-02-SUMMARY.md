@@ -39,3 +39,4 @@ Implemented client-side 1080×1350 PNG share card generation using `html-to-imag
    - Added unit test suite in `apps/web/src/test/share-card.test.tsx` (7 tests covering template rendering, button state, Web Share invocation, download fallback, and AbortError handling).
    - Monorepo test suite passes: 17 test files, 96 tests green.
    - Production bundle budget verified: 127.53 kB gzipped JS (<200 kB budget target).
+

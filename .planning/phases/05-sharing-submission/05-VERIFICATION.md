@@ -26,3 +26,4 @@
 - `pnpm --filter @breeze/web build` (production build passes in ~200ms, JS gzip size = 127.53 kB, well under 200 kB budget)
 - `pnpm smoke` (live smoke tests passing across 4 Indian regions with blackhole fallback proving)
 - `pnpm run verify:deploy` (live AWS deployment verification passes all 4 criteria against Amplify and Lambda Function URLs)
+
