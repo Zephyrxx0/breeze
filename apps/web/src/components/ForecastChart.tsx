@@ -1,6 +1,14 @@
-import { useState, useRef, useId, useCallback, useEffect } from "react";
-import { categoryFor, wallFromInstant, type AssessResponse } from "@breeze/core";
-import { ForecastTooltip, type TooltipPoint } from "./ForecastTooltip";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { bestWindow, categoryFor, wallFromInstant, type BestWindow, type Category } from "@breeze/core";
+import { AreaChart, Area } from "./charts/area-chart";
+import { Grid } from "./charts/grid";
+import { XAxis } from "./charts/x-axis";
+import { YAxis } from "./charts/y-axis";
+import { ChartTooltip } from "./charts/tooltip";
+import { ReferenceArea } from "./charts/reference-area";
+import { useChartStable, useChartHover } from "./charts/chart-context";
+import { wallToLocalDate } from "../lib/format";
+import { CATEGORY_FILL } from "../lib/theme";
 
 interface ForecastChartProps {
   hourly: Array<{
@@ -9,16 +17,13 @@ interface ForecastChartProps {
     pm10?: number;
   }>;
   utcOffsetSeconds: number;
+  /** Optional precomputed window; computed from `hourly` when omitted */
+  window?: BestWindow | null;
 }
 
-// Chart layout constants
-export const CHART_WIDTH = 600;
-export const CHART_HEIGHT = 220;
-export const PLOT_LEFT = 40;
-export const PLOT_RIGHT = 580;
-export const PLOT_TOP = 25;
-export const PLOT_BOTTOM = 185;
-
+// ---------------------------------------------------------------------------
+// Pure helpers (unit-tested in test/chart.test.ts)
+// ---------------------------------------------------------------------------
 export interface CpcbBand {
   min: number;
   max: number;
@@ -27,47 +32,34 @@ export interface CpcbBand {
 }
 
 export const CPCB_THRESHOLDS: CpcbBand[] = [
-  { min: 0, max: 30, color: "#10b981", label: "Good" },
-  { min: 30, max: 60, color: "#84cc16", label: "Satisfactory" },
-  { min: 60, max: 90, color: "#f59e0b", label: "Moderate" },
-  { min: 90, max: 120, color: "#f97316", label: "Poor" },
-  { min: 120, max: 250, color: "#ef4444", label: "Very Poor" },
-  { min: 250, max: Infinity, color: "#b91c1c", label: "Severe" },
+  { min: 0, max: 30, color: CATEGORY_FILL.Good.fill, label: "Good" },
+  { min: 30, max: 60, color: CATEGORY_FILL.Satisfactory.fill, label: "Satisfactory" },
+  { min: 60, max: 90, color: CATEGORY_FILL.Moderate.fill, label: "Moderate" },
+  { min: 90, max: 120, color: CATEGORY_FILL.Poor.fill, label: "Poor" },
+  { min: 120, max: 250, color: CATEGORY_FILL["Very Poor"].fill, label: "Very Poor" },
+  { min: 250, max: Infinity, color: CATEGORY_FILL.Severe.fill, label: "Severe" },
 ];
-
-/** Maps PM2.5 value to SVG Y coordinate (inverted) */
-export function yForPm25(val: number, maxVal: number, top = PLOT_TOP, bottom = PLOT_BOTTOM): number {
-  if (maxVal <= 0) return bottom;
-  const clamped = Math.max(0, val);
-  const ratio = Math.min(1, clamped / maxVal);
-  return bottom - ratio * (bottom - top);
-}
-
-/** Maps hourly point index to SVG X coordinate */
-export function xForIndex(index: number, total: number, left = PLOT_LEFT, right = PLOT_RIGHT): number {
-  if (total <= 1) return left;
-  return left + (index / (total - 1)) * (right - left);
-}
 
 /** Clamps keyboard scrubbing index */
 export function clampIndex(index: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, index));
 }
 
-/** Generates SVG bands for CPCB NAQI ranges up to dynamic max */
-export function getCpcbBands(maxVal: number, top = PLOT_TOP, bottom = PLOT_BOTTOM) {
-  return CPCB_THRESHOLDS.filter((b) => b.min < maxVal).map((band) => {
-    const bandMax = Math.min(band.max, maxVal);
-    const yTop = yForPm25(bandMax, maxVal, top, bottom);
-    const yBottom = yForPm25(band.min, maxVal, top, bottom);
-    return {
-      y: yTop,
-      height: Math.max(0, yBottom - yTop),
-      color: band.color,
-      label: band.label,
-      threshold: band.min,
-    };
+/** Night (before 06:00, from 20:00) runs as [startIdx, endIdx]; endIdx is the first non-night point (or the last point). */
+export function nightRuns(hourly: Array<{ time: string }>): Array<[number, number]> {
+  const runs: Array<[number, number]> = [];
+  let start = -1;
+  hourly.forEach((h, i) => {
+    const hour = parseInt(h.time.slice(11, 13), 10);
+    const night = hour < 6 || hour >= 20;
+    if (night && start < 0) start = i;
+    if (!night && start >= 0) {
+      runs.push([start, i]);
+      start = -1;
+    }
   });
+  if (start >= 0) runs.push([start, hourly.length - 1]);
+  return runs.filter(([a, b]) => b > a);
 }
 
 function formatHourLabel(wallStr: string): string {
@@ -80,324 +72,253 @@ function formatHourLabel(wallStr: string): string {
 
 function formatDayAndHour(wallStr: string, todayDateStr: string): string {
   const datePart = wallStr.slice(0, 10);
-  const hour = formatHourLabel(wallStr);
   const dayPrefix = datePart === todayDateStr ? "Today" : "Tomorrow";
-  return `${dayPrefix}, ${hour}`;
+  return `${dayPrefix}, ${formatHourLabel(wallStr)}`;
 }
 
-export function ForecastChart({ hourly, utcOffsetSeconds }: ForecastChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const chartId = useId();
+// ---------------------------------------------------------------------------
+// Chart internals that need Bklit's context
+// ---------------------------------------------------------------------------
+function NowLine({ at }: { at: Date }) {
+  const { xScale, innerHeight } = useChartStable();
+  const x = xScale(at);
+  if (x === undefined || Number.isNaN(x)) return null;
+  return (
+    <g aria-hidden="true" pointerEvents="none">
+      <line x1={x} x2={x} y1={0} y2={innerHeight} stroke="var(--ink-2)" strokeWidth={1.25} strokeDasharray="3 3" />
+      <text x={x} y={-7} textAnchor="middle" fontSize={10} fontWeight={700} letterSpacing="0.08em" fill="var(--ink-2)">
+        NOW
+      </text>
+    </g>
+  );
+}
 
-  // Fail-soft: if hourly data is absent, return null without crash
-  if (!hourly || hourly.length === 0) {
-    return null;
-  }
+/** Syncs keyboard scrubbing → Bklit tooltip, and Bklit hover → parent readout. */
+function Bridge({ kbIndex, kbSeq, onHover }: { kbIndex: number; kbSeq: number; onHover: (i: number) => void }) {
+  const { data, xScale, yScale, xAccessor } = useChartStable();
+  const { tooltipData, setTooltipData } = useChartHover();
 
+  useEffect(() => {
+    if (kbSeq === 0) return;
+    const d = data[kbIndex];
+    if (!d) return;
+    setTooltipData({
+      point: d,
+      index: kbIndex,
+      x: xScale(xAccessor(d)) ?? 0,
+      yPositions: { pm25: yScale(d.pm25 as number) ?? 0 },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kbSeq]);
+
+  const hoverIndex = tooltipData?.index;
+  useEffect(() => {
+    if (hoverIndex !== undefined) onHover(hoverIndex);
+  }, [hoverIndex, onHover]);
+
+  return null;
+}
+
+export function ForecastChart({ hourly, utcOffsetSeconds, window: windowProp }: ForecastChartProps) {
   const nowMs = Date.now();
   const currentWall = wallFromInstant(nowMs, utcOffsetSeconds);
   const todayDateStr = currentWall.slice(0, 10);
 
-  // Compute dynamic max PM2.5 (at least 130 to show Good through Poor clearly)
-  const rawMax = Math.max(...hourly.map((p) => p.pm25));
-  const dynamicMax = rawMax > 110 ? Math.ceil((rawMax * 1.2) / 30) * 30 : 130;
+  const nowIndex = useMemo(() => {
+    if (!hourly?.length) return 0;
+    const exact = hourly.findIndex((p) => p.time.slice(0, 13) === currentWall.slice(0, 13));
+    if (exact >= 0) return exact;
+    // Series does not contain the current hour: start at the nearest point
+    const idx = hourly.findIndex((p) => p.time.slice(0, 13) > currentWall.slice(0, 13));
+    return idx < 0 ? hourly.length - 1 : idx;
+  }, [hourly, currentWall]);
 
-  // Find index closest to "Now"
-  let nowIndex = 0;
-  let minDiff = Infinity;
-  hourly.forEach((pt, idx) => {
-    const diff = Math.abs(pt.time.localeCompare(currentWall));
-    if (diff < minDiff) {
-      minDiff = diff;
-      nowIndex = idx;
-    }
-  });
-
-  const [activeIndex, setActiveIndex] = useState<number | null>(nowIndex);
+  const [activeIndex, setActiveIndex] = useState<number>(nowIndex);
+  const [kbSeq, setKbSeq] = useState(0);
   const [debouncedAnnouncement, setDebouncedAnnouncement] = useState<string>("");
 
-  // Keyboard navigation handler
+  const window = useMemo(
+    () => (windowProp !== undefined ? windowProp : bestWindow(hourly ?? [], currentWall)),
+    [windowProp, hourly, currentWall]
+  );
+
+  const data = useMemo(
+    () => (hourly ?? []).map((h) => ({ date: wallToLocalDate(h.time), pm25: Math.round(h.pm25 * 10) / 10 })),
+    [hourly]
+  );
+
+  const nowDate = useMemo(() => {
+    const base = wallToLocalDate(currentWall);
+    const minutes = new Date(nowMs + utcOffsetSeconds * 1000).getUTCMinutes();
+    return new Date(base.getTime() + minutes * 60000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWall, utcOffsetSeconds]);
+
+  const nights = useMemo(() => nightRuns(hourly ?? []), [hourly]);
+
+  const active = hourly?.[activeIndex];
+  const activeCategory: Category | null = active ? categoryFor(active.pm25) : null;
+  const activeLabel = active ? formatDayAndHour(active.time, todayDateStr) : "";
+
+  // 120ms debounced live-region announcement
+  useEffect(() => {
+    if (!active || !activeCategory) return;
+    const msg = `${activeLabel}: ${Math.round(active.pm25)} µg/m³, ${activeCategory}`;
+    const timer = setTimeout(() => setDebouncedAnnouncement(msg), 120);
+    return () => clearTimeout(timer);
+  }, [active, activeCategory, activeLabel]);
+
+  // Fail-soft: no hourly data → render nothing
+  if (!hourly || hourly.length === 0 || !active) return null;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const current = activeIndex ?? nowIndex;
+    const bump = (i: number) => {
+      setActiveIndex(clampIndex(i, 0, hourly.length - 1));
+      setKbSeq((s) => s + 1);
+    };
     if (e.key === "ArrowLeft") {
       e.preventDefault();
-      setActiveIndex(clampIndex(current - 1, 0, hourly.length - 1));
+      bump(activeIndex - 1);
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
-      setActiveIndex(clampIndex(current + 1, 0, hourly.length - 1));
+      bump(activeIndex + 1);
     } else if (e.key === "Home") {
       e.preventDefault();
-      setActiveIndex(0);
+      bump(0);
     } else if (e.key === "End") {
       e.preventDefault();
-      setActiveIndex(hourly.length - 1);
+      bump(hourly.length - 1);
     }
   };
 
-  // Pointer move handler
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!svgRef.current) return;
-      const rect = svgRef.current.getBoundingClientRect();
-      const relativeX = ((e.clientX - rect.left) / rect.width) * CHART_WIDTH;
-
-      if (relativeX < PLOT_LEFT || relativeX > PLOT_RIGHT) return;
-
-      const step = (PLOT_RIGHT - PLOT_LEFT) / (hourly.length - 1);
-      const index = Math.round((relativeX - PLOT_LEFT) / step);
-      setActiveIndex(clampIndex(index, 0, hourly.length - 1));
-    },
-    [hourly.length]
-  );
-
-  const bands = getCpcbBands(dynamicMax, PLOT_TOP, PLOT_BOTTOM);
-
-  // Build SVG path points
-  const points = hourly.map((pt, i) => ({
-    x: xForIndex(i, hourly.length, PLOT_LEFT, PLOT_RIGHT),
-    y: yForPm25(pt.pm25, dynamicMax, PLOT_TOP, PLOT_BOTTOM),
-    pt,
-  }));
-
-  // Path data strings
-  const linePath = points.reduce((acc, p, i) => {
-    return i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-  }, "");
-
-  const areaPath = `${linePath} L ${PLOT_RIGHT} ${PLOT_BOTTOM} L ${PLOT_LEFT} ${PLOT_BOTTOM} Z`;
-
-  // Night shading intervals: hours < 6 or >= 20
-  const nightRects: Array<{ xStart: number; xEnd: number }> = [];
-  let inNight = false;
-  let startX = 0;
-
-  hourly.forEach((h, i) => {
-    const hour = parseInt(h.time.slice(11, 13), 10);
-    const isNight = hour < 6 || hour >= 20;
-    const x = xForIndex(i, hourly.length, PLOT_LEFT, PLOT_RIGHT);
-
-    if (isNight && !inNight) {
-      inNight = true;
-      startX = Math.max(PLOT_LEFT, x - (PLOT_RIGHT - PLOT_LEFT) / (hourly.length * 2));
-    } else if (!isNight && inNight) {
-      inNight = false;
-      const endX = x - (PLOT_RIGHT - PLOT_LEFT) / (hourly.length * 2);
-      nightRects.push({ xStart: startX, xEnd: endX });
-    }
-  });
-  if (inNight) {
-    nightRects.push({ xStart: startX, xEnd: PLOT_RIGHT });
-  }
-
-  // Active tooltip point
-  const currentActive = activeIndex !== null && hourly[activeIndex] ? hourly[activeIndex] : null;
-  const tooltipPoint: TooltipPoint | null = currentActive
-    ? {
-        timeStr: formatDayAndHour(currentActive.time, todayDateStr),
-        pm25: currentActive.pm25,
-        x: xForIndex(activeIndex!, hourly.length, PLOT_LEFT, PLOT_RIGHT),
-        y: yForPm25(currentActive.pm25, dynamicMax, PLOT_TOP, PLOT_BOTTOM),
-      }
-    : null;
-
-  const nowX = xForIndex(nowIndex, hourly.length, PLOT_LEFT, PLOT_RIGHT);
-
-  // 120ms debounced live region announcement
-  useEffect(() => {
-    if (!tooltipPoint) return;
-    const cat = categoryFor(tooltipPoint.pm25);
-    const msg = `${tooltipPoint.timeStr}: ${Math.round(tooltipPoint.pm25)} µg/m³, ${cat}`;
-
-    const timer = setTimeout(() => {
-      setDebouncedAnnouncement(msg);
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [tooltipPoint]);
-
-  const activePm25Round = tooltipPoint ? Math.round(tooltipPoint.pm25) : 0;
-  const activeCategory = tooltipPoint ? categoryFor(tooltipPoint.pm25) : "";
-  const ariaValueText = tooltipPoint
-    ? `${tooltipPoint.timeStr}: ${activePm25Round} µg/m³, ${activeCategory}`
-    : "";
+  const ariaValueText = activeCategory ? `${activeLabel}: ${Math.round(active.pm25)} µg/m³, ${activeCategory}` : "";
+  const fill = activeCategory ? CATEGORY_FILL[activeCategory] : null;
+  const isNow = activeIndex === nowIndex;
 
   return (
-    <div
-      className="w-full bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-      tabIndex={0}
-      role="slider"
-      aria-label="48-hour PM2.5 air quality forecast chart"
-      aria-valuemin={0}
-      aria-valuemax={hourly.length - 1}
-      aria-valuenow={activeIndex ?? nowIndex}
-      aria-valuetext={ariaValueText}
-      onKeyDown={handleKeyDown}
-    >
-      {/* Screen Reader Live Region */}
-      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {debouncedAnnouncement}
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="card space-y-4 p-5 sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-slate-900 tracking-tight">48-Hour Forecast</h2>
-          <p className="text-xs text-slate-500">Hourly PM2.5 trajectory &amp; CPCB quality bands</p>
+          <h2 className="text-base font-bold tracking-tight text-ink">48-hour forecast</h2>
+          <p className="text-xs text-ink-3">Hourly PM2.5 · regional model (CAMS, ~45 km)</p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-          <span className="w-2.5 h-2.5 rounded-xs bg-slate-800/10 inline-block" /> Night shading
-        </div>
-      </div>
-
-      {/* Responsive SVG Container */}
-      <div className="relative w-full overflow-hidden select-none">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          className="w-full h-auto touch-none"
-          preserveAspectRatio="xMidYMid meet"
-          onPointerMove={handlePointerMove}
-          onPointerLeave={() => setActiveIndex(nowIndex)}
-        >
-          <defs>
-            <linearGradient id={`area-grad-${chartId}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* CPCB Category Colored Background Bands */}
-          {bands.map((band, idx) => (
-            <g key={idx}>
-              <rect
-                x={PLOT_LEFT}
-                y={band.y}
-                width={PLOT_RIGHT - PLOT_LEFT}
-                height={band.height}
-                fill={band.color}
-                fillOpacity="0.08"
-              />
-              {/* Threshold Grid Line & Value Label */}
-              {band.threshold > 0 && (
-                <>
-                  <line
-                    x1={PLOT_LEFT}
-                    y1={yForPm25(band.threshold, dynamicMax, PLOT_TOP, PLOT_BOTTOM)}
-                    x2={PLOT_RIGHT}
-                    y2={yForPm25(band.threshold, dynamicMax, PLOT_TOP, PLOT_BOTTOM)}
-                    stroke="#94a3b8"
-                    strokeWidth="0.5"
-                    strokeDasharray="2 2"
-                    strokeOpacity="0.5"
-                  />
-                  <text
-                    x={PLOT_LEFT - 6}
-                    y={yForPm25(band.threshold, dynamicMax, PLOT_TOP, PLOT_BOTTOM) + 3}
-                    textAnchor="end"
-                    className="text-[9px] fill-slate-400 font-mono"
-                  >
-                    {band.threshold}
-                  </text>
-                </>
-              )}
-            </g>
-          ))}
-
-          {/* Night Shading Bands */}
-          {nightRects.map((nr, idx) => (
-            <rect
-              key={`night-${idx}`}
-              x={nr.xStart}
-              y={PLOT_TOP}
-              width={Math.max(0, nr.xEnd - nr.xStart)}
-              height={PLOT_BOTTOM - PLOT_TOP}
-              fill="#0f172a"
-              fillOpacity="0.05"
-            />
-          ))}
-
-          {/* Filled Area Gradient */}
-          <path d={areaPath} fill={`url(#area-grad-${chartId})`} />
-
-          {/* Main Trajectory Line */}
-          <path
-            d={linePath}
-            fill="none"
-            stroke="#2563eb"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* "Now" Vertical Marker */}
-          <line
-            x1={nowX}
-            y1={PLOT_TOP}
-            x2={nowX}
-            y2={PLOT_BOTTOM}
-            stroke="#64748b"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-          />
-          <text
-            x={nowX}
-            y={PLOT_TOP - 6}
-            textAnchor="middle"
-            className="text-[10px] font-bold fill-slate-600 tracking-wider uppercase"
-          >
-            Now
-          </text>
-
-          {/* X-Axis Ticks (6-hour intervals) */}
-          {hourly.map((pt, i) => {
-            const hour = parseInt(pt.time.slice(11, 13), 10);
-            if (hour % 6 !== 0) return null;
-            const x = xForIndex(i, hourly.length, PLOT_LEFT, PLOT_RIGHT);
-            const label = formatHourLabel(pt.time);
-            return (
-              <g key={`x-tick-${i}`}>
-                <line x1={x} y1={PLOT_BOTTOM} x2={x} y2={PLOT_BOTTOM + 4} stroke="#cbd5e1" strokeWidth="1" />
-                <text
-                  x={x}
-                  y={PLOT_BOTTOM + 16}
-                  textAnchor="middle"
-                  className="text-[9px] fill-slate-400 font-medium"
-                >
-                  {label}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Interactive Scrubbing Dot */}
-          {tooltipPoint && (
-            <g>
-              <circle
-                cx={tooltipPoint.x}
-                cy={tooltipPoint.y}
-                r="6"
-                fill="#2563eb"
-                stroke="#ffffff"
-                strokeWidth="2.5"
-                className="shadow-sm drop-shadow-md"
-              />
-              <line
-                x1={tooltipPoint.x}
-                y1={PLOT_TOP}
-                x2={tooltipPoint.x}
-                y2={PLOT_BOTTOM}
-                stroke="#3b82f6"
-                strokeWidth="1"
-                strokeOpacity="0.4"
-              />
-            </g>
+        <div className="flex items-center gap-4 text-[0.7rem] font-medium text-ink-3">
+          {window && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-[3px] bg-accent/35 ring-1 ring-accent/60" aria-hidden="true" /> Cleanest window
+            </span>
           )}
-        </svg>
-
-        {/* Tooltip Overlay */}
-        <ForecastTooltip point={tooltipPoint} chartWidth={CHART_WIDTH} />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-[3px] bg-ink/15" aria-hidden="true" /> Night
+          </span>
+        </div>
       </div>
+
+      {/* Readout for the scrubbed hour (hover, touch or arrow keys) */}
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-inset px-4 py-3" aria-hidden="true">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold uppercase tracking-wider text-ink-3">
+            {isNow ? "Now · " : ""}
+            {activeLabel}
+          </p>
+          <p className="tabular font-display text-4xl leading-none text-ink">
+            {Math.round(active.pm25)}
+            <span className="ml-1.5 font-sans text-xs font-semibold text-ink-3">µg/m³</span>
+          </p>
+        </div>
+        {fill && activeCategory && (
+          <span className="rounded-full px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider" style={{ background: fill.fill, color: fill.on }}>
+            {activeCategory}
+          </span>
+        )}
+      </div>
+
+      <div
+        className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-surface"
+        tabIndex={0}
+        role="slider"
+        aria-label="48-hour PM2.5 air quality forecast chart"
+        aria-valuemin={0}
+        aria-valuemax={hourly.length - 1}
+        aria-valuenow={activeIndex}
+        aria-valuetext={ariaValueText}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Screen Reader Live Region */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {debouncedAnnouncement}
+        </div>
+
+        <div className="select-none">
+          <AreaChart
+            data={data}
+            aspectRatio="2 / 1"
+            margin={{ top: 22, right: 10, bottom: 34, left: 34 }}
+            animationDuration={900}
+          >
+            {/* CPCB category bands */}
+            {CPCB_THRESHOLDS.map((b) => (
+              <ReferenceArea
+                key={b.label}
+                y1={b.min}
+                y2={Number.isFinite(b.max) ? b.max : 1000}
+                fill={b.color}
+                fillOpacity={0.11}
+                strokeWidth={0}
+                fadeEdges={false}
+              />
+            ))}
+            {/* Night shading */}
+            {nights.map(([a, b]) => (
+              <ReferenceArea
+                key={`night-${a}`}
+                x1={data[a].date}
+                x2={data[b].date}
+                fill="var(--ink)"
+                fillOpacity={0.055}
+                strokeWidth={0}
+                fadeEdges={false}
+              />
+            ))}
+            {/* Cleanest 3-hour window */}
+            {window && (
+              <ReferenceArea
+                x1={wallToLocalDate(window.startWall)}
+                x2={wallToLocalDate(window.endWall)}
+                fill="var(--accent)"
+                fillOpacity={0.2}
+                stroke="var(--accent)"
+                strokeWidth={1.25}
+                strokeStyle="solid"
+                fadeEdges={false}
+              />
+            )}
+            <Grid horizontal numTicksRows={4} />
+            <Area dataKey="pm25" fill="var(--accent)" fillOpacity={0.28} strokeWidth={2.5} />
+            <YAxis numTicks={4} />
+            <XAxis numTicks={5} />
+            <NowLine at={nowDate} />
+            <ChartTooltip
+              showDatePill={false}
+              rows={(p) => {
+                const v = p.pm25 as number;
+                const c = categoryFor(v);
+                return [{ color: CATEGORY_FILL[c].fill, label: c, value: `${Math.round(v)} µg/m³` }];
+              }}
+            />
+            <Bridge kbIndex={activeIndex} kbSeq={kbSeq} onHover={setActiveIndex} />
+          </AreaChart>
+        </div>
+      </div>
+
+      <ul className="hide-scrollbar -mx-1 flex gap-x-4 gap-y-1 overflow-x-auto px-1 text-[0.7rem] font-medium text-ink-3" aria-label="PM2.5 category colours">
+        {CPCB_THRESHOLDS.slice(0, 5).map((b) => (
+          <li key={b.label} className="inline-flex shrink-0 items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: b.color }} aria-hidden="true" />
+            {b.label}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
-

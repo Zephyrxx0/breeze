@@ -1,124 +1,109 @@
-import { wallFromInstant, type AssessResponse } from "@breeze/core";
+import type { AssessResponse } from "@breeze/core";
+import { instantToPlaceClock } from "../lib/format";
 
 interface ProvenanceFooterProps {
   data: AssessResponse;
   onOpenAbout?: () => void;
 }
 
-function formatWallTime(isoUtc?: string, utcOffsetSeconds: number = 0): string {
-  if (!isoUtc) return "Recently";
-  try {
-    const ms = new Date(isoUtc).getTime();
-    if (isNaN(ms)) return "Recently";
-    const wall = wallFromInstant(ms, utcOffsetSeconds);
-    const hourNum = parseInt(wall.slice(11, 13), 10);
-    const minuteStr = wall.slice(14, 16);
-    const ampm = hourNum >= 12 ? "PM" : "AM";
-    const h12 = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
-    return `${h12}:${minuteStr} ${ampm}`;
-  } catch {
-    return "Recently";
-  }
+const LINK =
+  "text-ink-2 underline decoration-line-strong underline-offset-2 transition hover:text-ink hover:decoration-accent rounded-sm";
+
+type Status = "ok" | "stale" | "unavailable";
+
+function StatusDot({ status }: { status: Status }) {
+  const tone = status === "ok" ? "bg-go" : status === "stale" ? "bg-care" : "bg-ink-3/50";
+  return <span className={`h-2 w-2 shrink-0 rounded-full ${tone}`} aria-hidden="true" />;
 }
 
 export function ProvenanceFooter({ data, onOpenAbout }: ProvenanceFooterProps) {
   const offset = data.location.utcOffsetSeconds;
-  const updatedTime = formatWallTime(data.generatedAt, offset);
+  const updatedTime = instantToPlaceClock(data.generatedAt, offset) ?? "Recently";
 
-  const airFetchedAt =
-    data.sources?.openmeteo_air?.fetchedAt ||
-    data.air.current?.measuredAt ||
-    data.generatedAt;
-  const airTime = formatWallTime(airFetchedAt, offset);
-
-  const weatherFetchedAt =
-    data.sources?.openmeteo_forecast?.fetchedAt || data.generatedAt;
-  const weatherTime = formatWallTime(weatherFetchedAt, offset);
+  const rows: Array<{ label: string; status: Status; detail: string }> = [
+    {
+      label: "Air model (CAMS)",
+      status: (data.sources?.openmeteo_air?.status as Status) ?? "unavailable",
+      detail: instantToPlaceClock(data.sources?.openmeteo_air?.fetchedAt, offset) ?? statusWord(data.sources?.openmeteo_air),
+    },
+    {
+      label: "Weather (Open-Meteo)",
+      status: (data.sources?.openmeteo_forecast?.status as Status) ?? "unavailable",
+      detail: instantToPlaceClock(data.sources?.openmeteo_forecast?.fetchedAt, offset) ?? statusWord(data.sources?.openmeteo_forecast),
+    },
+    {
+      label: "Ground stations (OpenAQ)",
+      status: (data.sources?.openaq?.status as Status) ?? "unavailable",
+      detail:
+        data.sources?.openaq?.status === "ok"
+          ? (instantToPlaceClock(data.sources.openaq.fetchedAt, offset) ?? "ok")
+          : data.air.current?.source === "station"
+            ? statusWord(data.sources?.openaq)
+            : "none in range",
+    },
+  ];
 
   return (
-    <footer className="w-full pt-8 pb-12 border-t border-slate-200/80 text-xs text-slate-500 space-y-4">
-      {/* Timestamps */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-slate-600">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-          <span>
-            Updated at <strong className="text-slate-800">{updatedTime}</strong> (local time)
+    <footer className="space-y-5 pb-6 pt-2 text-xs leading-relaxed text-ink-3">
+      <div className="card space-y-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-ink-2">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-go" aria-hidden="true" />
+            Updated at <strong className="text-ink">{updatedTime}</strong> (local time)
           </span>
+          {onOpenAbout && (
+            <button
+              type="button"
+              onClick={onOpenAbout}
+              data-testid="footer-open-about-button"
+              className="cursor-pointer rounded-sm font-semibold text-accent underline underline-offset-2"
+            >
+              Learn how Breeze measures air quality &amp; data sources &rarr;
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <span>Air: {airTime}</span>
-          <span>Weather: {weatherTime}</span>
-        </div>
+        <ul className="grid gap-x-6 gap-y-1.5 border-t border-line pt-3 sm:grid-cols-3">
+          {rows.map((r) => (
+            <li key={r.label} className="flex items-center gap-2">
+              <StatusDot status={r.status} />
+              <span className="text-ink-2">{r.label}</span>
+              <span className="tabular ml-auto text-ink-3 sm:ml-1">{r.detail}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* Attribution links (CC BY 4.0 compliant) */}
-      <div className="space-y-1.5 leading-relaxed text-slate-500">
+      <div className="space-y-1.5 px-1">
         <p>
           Air quality model data provided by{" "}
-          <a
-            href="https://atmosphere.copernicus.eu/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
+          <a href="https://atmosphere.copernicus.eu/" target="_blank" rel="noopener noreferrer" className={LINK}>
             Copernicus Atmosphere Monitoring Service (CAMS)
           </a>{" "}
           &amp;{" "}
-          <a
-            href="https://open-meteo.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
+          <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" className={LINK}>
             Open-Meteo
           </a>{" "}
           under{" "}
-          <a
-            href="https://creativecommons.org/licenses/by/4.0/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className={LINK}>
             CC BY 4.0
           </a>
-          .
-        </p>
-        <p>
-          Ground station readings aggregated via{" "}
-          <a
-            href="https://openaq.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-700 underline hover:text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
+          . Ground station readings aggregated via{" "}
+          <a href="https://openaq.org/" target="_blank" rel="noopener noreferrer" className={LINK}>
             OpenAQ
           </a>
           .
         </p>
-      </div>
-
-      {/* About & Explanations trigger link */}
-      {onOpenAbout && (
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={onOpenAbout}
-            data-testid="footer-open-about-button"
-            className="font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-sm cursor-pointer"
-          >
-            Learn how Breeze measures air quality &amp; data sources &rarr;
-          </button>
-        </div>
-      )}
-
-      {/* Medical disclaimer */}
-      <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
-        <p>
-          <strong>Disclaimer:</strong> General guidance, not medical advice. Air quality impacts
-          vary by individual health condition and duration of exposure.
+        <p className="text-[0.7rem]">
+          <strong>Disclaimer:</strong> General guidance, not medical advice. Air quality impacts vary by individual
+          health condition and duration of exposure.
         </p>
       </div>
     </footer>
   );
 }
 
+function statusWord(s?: { status: string; ageMin?: number }): string {
+  if (!s) return "unavailable";
+  if (s.status === "stale") return s.ageMin !== undefined ? `cached ${s.ageMin}m ago` : "cached";
+  return s.status;
+}

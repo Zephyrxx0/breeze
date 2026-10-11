@@ -5,9 +5,11 @@ import { reverseGeocode } from "../lib/geocode";
 interface LocationButtonProps {
   onLocationFound: (loc: { lat: number; lon: number; name: string }) => void;
   onError: (msg: string) => void;
+  /** Visual treatment: compact icon pill next to search, or a larger standalone button */
+  variant?: "compact" | "large";
 }
 
-export function LocationButton({ onLocationFound, onError }: LocationButtonProps) {
+export function LocationButton({ onLocationFound, onError, variant = "compact" }: LocationButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleGetLocation = () => {
@@ -46,22 +48,27 @@ export function LocationButton({ onLocationFound, onError }: LocationButtonProps
     );
   };
 
+  const large = variant === "large";
+
   return (
     <button
       type="button"
       onClick={handleGetLocation}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3.5 py-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:text-slate-900 shadow-xs transition-colors shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+      className={
+        large
+          ? "inline-flex items-center justify-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-sm font-semibold text-canvas shadow-[0_14px_30px_-14px_rgb(12_26_32/0.6)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+          : "inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:border-accent disabled:opacity-60"
+      }
       title="Use my location"
       aria-label="Use my location"
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : (
-        <Navigation className="w-4 h-4 text-blue-600" />
+        <Navigation className={large ? "h-4 w-4" : "h-4 w-4 text-accent"} aria-hidden="true" />
       )}
-      <span className="hidden sm:inline">Use my location</span>
+      <span className={large ? "" : "hidden sm:inline"}>Use my location</span>
     </button>
   );
 }
-

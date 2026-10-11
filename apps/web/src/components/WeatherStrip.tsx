@@ -1,74 +1,96 @@
-import { Sun, Droplets, CloudRain, Wind, Thermometer } from "lucide-react";
+import { Sun, Droplets, CloudRain, Wind, Thermometer, Sunrise, Sunset, type LucideIcon } from "lucide-react";
 import type { AssessResponse } from "@breeze/core";
+import { compassFromDegrees, wallToClock } from "../lib/format";
+import { weatherNow } from "../lib/weatherNow";
 
 interface WeatherStripProps {
   weather: AssessResponse["weather"];
+  /** Place UTC offset, used to select the *current local hour* (hourly[0] is local midnight, not "now") */
+  utcOffsetSeconds?: number;
+  nowMs?: number;
 }
 
-export function WeatherStrip({ weather }: WeatherStripProps) {
-  // Fail-soft rule: if weather is unavailable or missing, hide completely without error
-  if (!weather || weather.status === "unavailable" || !weather.hourly || weather.hourly.length === 0) {
-    return null;
-  }
-
-  const current = weather.hourly[0];
-  const uvMax = weather.daily?.uvIndexMax ?? current.uvIndex;
-
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  sub?: string;
+  tone: string;
+}) {
   return (
-    <div className="w-full bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Current Conditions
-        </h3>
-        <span className="text-xs font-semibold text-slate-400">Open-Meteo</span>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-slate-700">
-        {/* Feels Like */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <Thermometer className="w-4 h-4 text-rose-500 shrink-0" />
-          <div>
-            <div className="text-xs text-slate-500">Feels like</div>
-            <div className="text-sm font-bold text-slate-900">
-              {Math.round(current.apparentTemperature)}°C
-            </div>
-          </div>
-        </div>
-
-        {/* Humidity */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <Droplets className="w-4 h-4 text-blue-500 shrink-0" />
-          <div>
-            <div className="text-xs text-slate-500">Humidity</div>
-            <div className="text-sm font-bold text-slate-900">
-              {Math.round(current.relativeHumidity)}%
-            </div>
-          </div>
-        </div>
-
-        {/* UV Index */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <Sun className="w-4 h-4 text-amber-500 shrink-0" />
-          <div>
-            <div className="text-xs text-slate-500">UV Index</div>
-            <div className="text-sm font-bold text-slate-900">
-              {Math.round(current.uvIndex)} (max {Math.round(uvMax)})
-            </div>
-          </div>
-        </div>
-
-        {/* Rain Chance */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <CloudRain className="w-4 h-4 text-indigo-500 shrink-0" />
-          <div>
-            <div className="text-xs text-slate-500">Rain chance</div>
-            <div className="text-sm font-bold text-slate-900">
-              {Math.round(current.precipitationProbability)}%
-            </div>
-          </div>
+    <div className="flex items-center gap-3 rounded-2xl bg-inset p-3">
+      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface shadow-sm ${tone}`}>
+        <Icon className="h-[1.05rem] w-[1.05rem]" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[0.7rem] font-semibold text-ink-3">{label}</div>
+        <div className="tabular text-sm font-bold text-ink">
+          {value}
+          {sub && <span className="ml-1 font-medium text-ink-3">{sub}</span>}
         </div>
       </div>
     </div>
   );
 }
 
+const num = (v: number | undefined) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
+
+export function WeatherStrip({ weather, utcOffsetSeconds = 19800, nowMs }: WeatherStripProps) {
+  // Fail-soft: weather missing or not covering the current hour → hide only this strip
+  const w = weatherNow(weather, utcOffsetSeconds, nowMs ?? Date.now());
+  if (!w) return null;
+
+  const feels = num(w.feelsLikeC);
+  const humidity = num(w.humidity);
+  const uv = num(w.uvNow);
+  const uvMax = num(w.uvMaxToday);
+  const rain = num(w.rainNext6h);
+  const wind = num(w.windSpeedKmh);
+
+  return (
+    <div className="card space-y-4 p-5 sm:p-7">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-[0.7rem] font-bold uppercase tracking-wider text-ink-3">Current conditions</h3>
+        <span className="text-[0.7rem] font-semibold text-ink-3">Open-Meteo</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        {feels !== null && <Stat icon={Thermometer} label="Feels like" value={`${feels}°C`} tone="text-[#d9534f]" />}
+        {humidity !== null && <Stat icon={Droplets} label="Humidity" value={`${humidity}%`} tone="text-[#2f8fd8]" />}
+        {uv !== null && (
+          <Stat icon={Sun} label="UV index" value={`${uv}`} sub={uvMax !== null ? `(max ${uvMax})` : undefined} tone="text-[#e8a317]" />
+        )}
+        {rain !== null && <Stat icon={CloudRain} label="Rain chance, next 6 h" value={`${rain}%`} tone="text-[#5b6fd6]" />}
+        {wind !== null && (
+          <Stat
+            icon={Wind}
+            label="Wind"
+            value={`${wind} km/h`}
+            sub={typeof w.windFromDeg === "number" ? `from ${compassFromDegrees(w.windFromDeg)}` : undefined}
+            tone="text-[#2a9d8f]"
+          />
+        )}
+        {w.sunrise && w.sunset && (
+          <div className="flex items-center gap-3 rounded-2xl bg-inset p-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface text-[#e8860f] shadow-sm">
+              <Sunrise className="h-[1.05rem] w-[1.05rem]" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 text-[0.7rem] font-semibold leading-snug text-ink-3">
+              <div className="tabular text-sm font-bold text-ink">{wallToClock(w.sunrise)}</div>
+              <div className="flex items-center gap-1">
+                <Sunset className="h-3 w-3" aria-hidden="true" />
+                <span className="tabular">{wallToClock(w.sunset)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

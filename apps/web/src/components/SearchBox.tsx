@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Search, MapPin, X, Bookmark } from "lucide-react";
+import React, { useState, useEffect, useRef, useId } from "react";
+import { Search, MapPin, X, Bookmark, Loader2, TriangleAlert } from "lucide-react";
 import { searchPlaces, type GeocodeResult } from "../lib/geocode";
 
 interface SearchBoxProps {
@@ -10,6 +10,8 @@ interface SearchBoxProps {
   inputRef?: React.RefObject<HTMLInputElement | null>;
   isSaved?: boolean;
   onToggleSave?: () => void;
+  /** Larger input for the empty/welcome state */
+  size?: "default" | "large";
 }
 
 export function SearchBox({
@@ -20,25 +22,29 @@ export function SearchBox({
   inputRef,
   isSaved,
   onToggleSave,
+  size = "default",
 }: SearchBoxProps) {
   const [query, setQuery] = useState(currentPlace);
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const internalInputRef = useRef<HTMLInputElement>(null);
   const activeInputRef = inputRef || internalInputRef;
+  const listId = useId();
 
   // Sync query text with external place changes
   useEffect(() => {
     setQuery(currentPlace);
   }, [currentPlace]);
 
-  // Debounced search (300ms)
+  // Debounced search (250 ms, ≥ 2 characters — FR-01)
   useEffect(() => {
     if (!isOpen || query.trim().length < 2) {
       setResults([]);
+      setSearched(false);
       return;
     }
 
@@ -52,8 +58,9 @@ export function SearchBox({
         setResults([]);
       } finally {
         setLoading(false);
+        setSearched(true);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [query, isOpen]);
@@ -61,33 +68,29 @@ export function SearchBox({
   // Dismiss on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        activeInputRef.current &&
-        !activeInputRef.current.contains(event.target as Node)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setQuery(currentPlace);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [currentPlace, activeInputRef]);
+  }, [currentPlace]);
 
   const handleSelect = (place: GeocodeResult) => {
     const label = place.admin1 ? `${place.name}, ${place.admin1}` : place.name;
     setQuery(label);
     setIsOpen(false);
     if (onClearError) onClearError();
-    onSelectPlace({
-      lat: place.latitude,
-      lon: place.longitude,
-      name: label,
-    });
+    onSelectPlace({ lat: place.latitude, lon: place.longitude, name: label });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setIsOpen(false);
+      setQuery(currentPlace);
+      return;
+    }
     if (!isOpen || results.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -96,29 +99,39 @@ export function SearchBox({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === "Enter" && selectedIndex >= 0) {
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      handleSelect(results[selectedIndex]);
-    } else if (e.key === "Escape") {
-      setIsOpen(false);
-      setQuery(currentPlace);
+      handleSelect(results[selectedIndex >= 0 ? selectedIndex : 0]);
     }
   };
 
+  const large = size === "large";
+  const showList = isOpen && query.trim().length >= 2 && (loading || results.length > 0 || searched);
+
   return (
-    <div className="w-full relative">
+    <div className="relative w-full" ref={wrapperRef}>
       <div className="relative flex items-center">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
+        <Search
+          className={`pointer-events-none absolute text-ink-3 ${large ? "left-5 h-5 w-5" : "left-4 h-[1.15rem] w-[1.15rem]"}`}
+          aria-hidden="true"
+        />
         <input
           ref={activeInputRef}
           type="text"
+          role="combobox"
+          aria-expanded={showList}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={selectedIndex >= 0 ? `${listId}-${selectedIndex}` : undefined}
+          autoComplete="off"
           value={query}
           aria-label="Search city or town in India"
-          placeholder="Search place in India..."
-          className="w-full pl-11 pr-18 py-3 bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all font-medium text-base"
-          onFocus={() => {
-            setQuery("");
-            setIsOpen(true);
+          placeholder="Search a city or town in India…"
+          className={`w-full rounded-full border border-line-strong bg-surface text-ink shadow-[var(--shadow-card)] placeholder:text-ink-3 transition focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 ${
+            large ? "py-4 pl-13 pr-24 text-lg" : "h-12 pl-11 pr-24 text-base"
+          } font-medium`}
+          onFocus={(e) => {
+            e.target.select();
             if (onClearError) onClearError();
           }}
           onChange={(e) => {
@@ -127,34 +140,35 @@ export function SearchBox({
           }}
           onKeyDown={handleKeyDown}
         />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {query && (
+        <div className="absolute right-2 flex items-center gap-0.5">
+          {loading && <Loader2 className="mr-1 h-4 w-4 animate-spin text-ink-3" aria-hidden="true" />}
+          {query && !loading && (
             <button
               type="button"
               aria-label="Clear search"
               onClick={() => {
                 setQuery("");
                 setResults([]);
+                setSearched(false);
                 activeInputRef.current?.focus();
               }}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+              className="rounded-full p-1.5 text-ink-3 transition hover:bg-inset hover:text-ink"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
           {onToggleSave && (
             <button
               type="button"
               aria-label={isSaved ? "Remove from saved places" : "Save this place"}
+              aria-pressed={!!isSaved}
               data-testid="bookmark-place-button"
               onClick={onToggleSave}
-              className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                isSaved
-                  ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              className={`rounded-full p-2 transition ${
+                isSaved ? "bg-accent-soft text-accent" : "text-ink-3 hover:bg-inset hover:text-ink"
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600" : ""}`} />
+              <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -162,44 +176,49 @@ export function SearchBox({
 
       {/* Geolocation / bounds inline error banner */}
       {errorMessage && (
-        <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm flex items-center gap-2">
-          <span>⚠️ {errorMessage}</span>
+        <div role="alert" className="mt-2.5 flex items-center gap-2 rounded-2xl border border-care/50 bg-care/15 px-4 py-2.5 text-sm font-medium text-[#6b4500] dark:text-[#ffd27a]">
+          <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Dropdown Results */}
-      {isOpen && (results.length > 0 || loading) && (
-        <div
-          ref={dropdownRef}
-          className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg max-h-72 overflow-y-auto py-1"
+      {showList && (
+        <ul
+          id={listId}
+          role="listbox"
+          className="animate-fade absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-3xl border border-line bg-surface p-1.5 shadow-[var(--shadow-pop)]"
         >
           {loading && results.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-slate-500">Searching places in India...</div>
+            <li className="px-4 py-3 text-sm text-ink-3">Searching places in India…</li>
+          ) : results.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-ink-3">No places found in India for “{query.trim()}”. Try another spelling.</li>
           ) : (
             results.map((place, idx) => {
               const isSelected = idx === selectedIndex;
               return (
-                <button
-                  key={`${place.id}-${idx}`}
-                  type="button"
-                  onClick={() => handleSelect(place)}
-                  onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-colors ${
-                    isSelected ? "bg-blue-50 text-blue-950 font-medium" : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="truncate">
-                    <span className="font-semibold text-slate-900">{place.name}</span>
-                    {place.admin1 ? `, ${place.admin1}` : ""}
-                  </span>
-                </button>
+                <li key={`${place.id}-${idx}`} role="option" id={`${listId}-${idx}`} aria-selected={isSelected}>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => handleSelect(place)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left text-sm transition ${
+                      isSelected ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-inset"
+                    }`}
+                  >
+                    <MapPin className="h-4 w-4 shrink-0 text-ink-3" aria-hidden="true" />
+                    <span className="truncate">
+                      <span className="font-semibold text-ink">{place.name}</span>
+                      {place.admin1 ? `, ${place.admin1}` : ""}
+                    </span>
+                  </button>
+                </li>
               );
             })
           )}
-        </div>
+        </ul>
       )}
     </div>
   );
 }
-

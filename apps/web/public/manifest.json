@@ -1,0 +1,15 @@
+{
+  "name": "Breeze — air quality verdict for India",
+  "short_name": "Breeze",
+  "description": "Is the air outside OK for you right now? One honest verdict for anywhere in India.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6f5",
+  "theme_color": "#f2f6f5",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

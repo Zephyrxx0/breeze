@@ -1,103 +1,64 @@
 import { forwardRef } from "react";
-import { CheckCircle2, AlertCircle, AlertTriangle, Wind } from "lucide-react";
-import {
-  categoryFor,
-  verdictFor,
-  reasonLines,
-  confidenceFor,
-  wallFromInstant,
-  formatTip,
-  type AssessResponse,
-  type Tip,
-} from "@breeze/core";
+import { formatTip, type AssessResponse, type Tip } from "@breeze/core";
+import { deriveAssessment } from "../lib/assessment";
+import { CATEGORY_FILL, CATEGORY_ORDER, VERDICT_THEMES } from "../lib/theme";
+import { scalePosition } from "./CpcbScale";
+import { instantToPlaceClock } from "../lib/format";
 
 export interface ShareCardProps {
   data: AssessResponse;
   profile?: "standard" | "sensitive";
   tips?: Tip[];
+  /** Friendly place label (never raw coordinates — PRD §15) */
+  placeName?: string;
+  /** Short host shown on the card, e.g. "breeze.example.com" */
+  shareUrl?: string;
 }
 
-const VERDICT_THEMES: Record<
-  string,
-  {
-    bg: string;
-    border: string;
-    badgeBg: string;
-    text: string;
-    icon: typeof CheckCircle2;
-    iconColor: string;
-    pillBg: string;
-  }
-> = {
-  "Good to go": {
-    bg: "bg-emerald-50/60",
-    border: "border-emerald-200",
-    badgeBg: "bg-emerald-600",
-    text: "text-emerald-950",
-    icon: CheckCircle2,
-    iconColor: "text-emerald-600",
-    pillBg: "bg-emerald-100 text-emerald-800",
-  },
-  "Take care": {
-    bg: "bg-amber-50/60",
-    border: "border-amber-200",
-    badgeBg: "bg-amber-600",
-    text: "text-amber-950",
-    icon: AlertCircle,
-    iconColor: "text-amber-600",
-    pillBg: "bg-amber-100 text-amber-800",
-  },
-  "Stay indoors if you can": {
-    bg: "bg-rose-50/60",
-    border: "border-rose-200",
-    badgeBg: "bg-rose-600",
-    text: "text-rose-950",
-    icon: AlertTriangle,
-    iconColor: "text-rose-600",
-    pillBg: "bg-rose-100 text-rose-800",
-  },
-};
+// Fixed light palette: the card is a shareable artefact and must not follow the viewer's theme.
+const INK = "#0b1a20";
+const INK2 = "#3d525a";
+const INK3 = "#5a6f77";
+const SANS = '"Figtree Variable", system-ui, -apple-system, "Segoe UI", sans-serif';
+const SERIF = '"Instrument Serif", Georgia, "Times New Roman", serif';
+
+function formatAsOf(nowMs: number, utcOffsetSeconds: number): string {
+  const shifted = new Date(nowMs + utcOffsetSeconds * 1000);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const clock = instantToPlaceClock(new Date(nowMs).toISOString(), utcOffsetSeconds) ?? "";
+  return `${clock}, ${shifted.getUTCDate()} ${months[shifted.getUTCMonth()]}`;
+}
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(function ShareCard(
-  { data, profile = "standard", tips = [] },
+  { data, profile = "standard", tips = [], placeName, shareUrl },
   ref
 ) {
-  const current = data.air.current;
-  if (!current) return null;
+  const nowMs = Date.now();
+  const a = deriveAssessment(data, profile, nowMs);
+  if (!a) return null;
 
-  const category = categoryFor(current.pm25);
-  const verdict = verdictFor(category, profile);
-  const conf = confidenceFor({
-    source: current.source,
-    distanceKm: current.station?.distanceKm,
-  });
-  const reasons = reasonLines({
-    effective: {
-      pm25: current.pm25,
-      source: current.source,
-      measuredAt: current.measuredAt,
-      station: current.station,
-      modelDistanceNote: current.modelDistanceNote,
-      confidence: conf,
-    },
-    category,
-    profile,
-    nowMs: Date.now(),
-  });
-  const theme = VERDICT_THEMES[verdict] || VERDICT_THEMES["Take care"];
-  const VerdictIcon = theme.icon;
-
-  const measuredDate = new Date(current.measuredAt);
-  const measuredWall = isNaN(measuredDate.getTime())
-    ? current.measuredAt
-    : wallFromInstant(measuredDate, data.location.utcOffsetSeconds);
+  const { effective, today, confidence } = a;
+  const verdict = today.verdict;
+  const theme = VERDICT_THEMES[verdict];
+  const fill = CATEGORY_FILL[today.category];
+  const place = placeName || (data.location as { name?: string }).name || "Your location";
+  const host = shareUrl || (typeof window !== "undefined" ? window.location.host : "");
 
   const sourceLabel =
-    current.source === "station"
-      ? current.station?.name || "Ground monitoring station"
+    effective.source === "station"
+      ? effective.station?.name || "Ground monitoring station"
       : "Regional atmospheric model (~45 km)";
+  const sourceDetail =
+    effective.source === "station"
+      ? `Official monitor${effective.station ? `, ${Math.round(effective.station.distanceKm)} km away` : ""}${
+          a.ageMin !== null ? ` · ${a.ageMin} min old` : ""
+        } · via OpenAQ`
+      : "Copernicus CAMS via Open-Meteo · estimate for a ~45 km area";
 
   const topTips = tips.slice(0, 3);
+  const pos = Math.min(98, Math.max(2, scalePosition(effective.pm25) * 100));
+  const verdictSize = verdict.length <= 12 ? 176 : 124;
+  const Icon = theme.icon;
 
   return (
     <div
@@ -106,170 +67,194 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(function Sha
       style={{
         width: "1080px",
         height: "1350px",
-        fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+        fontFamily: SANS,
+        background: "#f1f6f4",
+        color: INK,
+        position: "relative",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
-      className="bg-white text-slate-900 flex flex-col justify-between p-16 select-none overflow-hidden relative box-border"
     >
-      {/* Decorative gradient overlay */}
+      {/* Verdict-coloured sky */}
       <div
-        className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-blue-100/50 blur-3xl pointer-events-none"
         aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: "0 0 auto 0",
+          height: 800,
+          background: theme.gradient,
+          borderRadius: "0 0 80px 80px",
+        }}
       />
       <div
-        className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-emerald-100/40 blur-3xl pointer-events-none"
         aria-hidden="true"
+        style={{ position: "absolute", top: -160, right: -120, width: 560, height: 560, borderRadius: "50%", background: "rgba(255,255,255,0.22)", filter: "blur(70px)" }}
       />
+      <svg aria-hidden="true" viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ position: "absolute", left: 0, top: 690, width: 1080, height: 110, opacity: 0.14, color: theme.text }} fill="currentColor">
+        <path d="M0 60 C 150 20, 300 100, 450 60 S 750 20, 900 60 S 1050 100, 1200 60 V120 H0 Z" />
+      </svg>
 
-      {/* 1. Header & Branding */}
-      <div className="relative z-10 flex items-center justify-between border-b border-slate-200 pb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md">
-            <Wind className="w-8 h-8" />
+      <div style={{ position: "relative", zIndex: 1, padding: "68px 72px 0", color: theme.text, flex: "0 0 auto" }}>
+        {/* header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <svg viewBox="0 0 64 64" width="60" height="60" aria-hidden="true">
+              <rect width="64" height="64" rx="18" fill="rgba(255,255,255,0.22)" />
+              <g fill="none" stroke={theme.text} strokeWidth="5" strokeLinecap="round">
+                <path d="M14 24h26a7 7 0 1 0-7-7" />
+                <path d="M14 34h34a7 7 0 1 1-7 7" />
+                <path d="M14 44h16" />
+              </g>
+            </svg>
+            <span style={{ fontFamily: SERIF, fontSize: 56, lineHeight: 1 }}>Breeze</span>
           </div>
-          <div>
-            <span className="text-3xl font-black tracking-tight text-slate-900">Breeze</span>
-            <span className="block text-base font-semibold text-slate-500 uppercase tracking-widest">
-              Live Air Verdict
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-bold bg-slate-100 text-slate-700 border border-slate-200">
-            {profile === "sensitive" ? "Sensitive Profile" : "Standard Profile"}
+          <span
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              padding: "10px 24px",
+              borderRadius: 999,
+              background: theme.chip,
+              letterSpacing: 0.4,
+            }}
+          >
+            {profile === "sensitive" ? "Sensitive profile" : "Standard profile"}
           </span>
         </div>
+
+        {/* place + verdict */}
+        <p style={{ margin: "70px 0 0", fontSize: 28, fontWeight: 700, letterSpacing: 3.5, textTransform: "uppercase", color: theme.textSoft }}>
+          Air right now · {place}
+        </p>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 28, marginTop: 22 }}>
+          <Icon width={verdictSize * 0.5} height={verdictSize * 0.5} style={{ flex: "0 0 auto", marginTop: verdictSize * 0.12 }} strokeWidth={1.7} aria-hidden="true" />
+          <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: verdictSize, lineHeight: 0.94, letterSpacing: -2 }}>{verdict}</h2>
+        </div>
+        <p style={{ margin: "34px 0 0", fontSize: 31, fontWeight: 600, lineHeight: 1.35, maxWidth: 900 }}>{today.reasons[0]}</p>
       </div>
 
-      {/* 2. Location & Big Verdict Card */}
-      <div className="relative z-10 space-y-6 my-auto">
-        <div className="space-y-2">
-          <span className="text-xl font-bold uppercase tracking-wider text-blue-600">
-            Current Air Assessment
-          </span>
-          <h1 className="text-6xl font-black tracking-tight text-slate-950 leading-tight">
-            {data.location.name}
-          </h1>
-        </div>
-
-        {/* Big Verdict Hero Box */}
+      {/* Reading + tips sheet */}
+      <div style={{ position: "relative", zIndex: 1, padding: "0 56px", marginTop: "auto", marginBottom: 0, flex: "0 0 auto", transform: "translateY(-6px)" }}>
         <div
-          className={`rounded-3xl border-2 ${theme.border} ${theme.bg} p-10 space-y-6 shadow-sm`}
+          style={{
+            background: "#fff",
+            borderRadius: 48,
+            padding: "40px 48px",
+            boxShadow: "0 30px 60px -30px rgba(11,26,32,0.45)",
+          }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-5">
-              <VerdictIcon className={`w-16 h-16 ${theme.iconColor} shrink-0`} />
-              <div>
-                <span className="text-sm font-bold uppercase tracking-wider text-slate-500">
-                  Plain-Language Verdict
-                </span>
-                <h2 className={`text-5xl font-black tracking-tight ${theme.text}`}>
-                  {verdict}
-                </h2>
-              </div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+              <span style={{ fontFamily: SERIF, fontSize: 150, lineHeight: 0.85, letterSpacing: -3 }}>{Math.round(effective.pm25)}</span>
+              <span style={{ fontSize: 28, fontWeight: 700, color: INK2 }}>µg/m³ PM2.5</span>
             </div>
-            <span className={`px-5 py-2.5 rounded-2xl text-lg font-black ${theme.pillBg}`}>
-              {category.toUpperCase()}
+            <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", padding: "12px 28px", borderRadius: 999, background: fill.fill, color: fill.on }}>
+              {today.category}
             </span>
           </div>
 
-          <div className="space-y-2 pt-4 border-t border-slate-200/60 text-xl leading-relaxed text-slate-700">
-            <p className="font-bold text-slate-900">{reasons[0]}</p>
-            <p className="text-slate-600">{reasons[1]}</p>
+          <div style={{ position: "relative", marginTop: 30 }}>
+            <div style={{ display: "flex", gap: 4, height: 16 }}>
+              {CATEGORY_ORDER.map((c, i) => (
+                <span
+                  key={c}
+                  style={{
+                    flex: 1,
+                    background: CATEGORY_FILL[c].fill,
+                    borderRadius: i === 0 ? "99px 0 0 99px" : i === 5 ? "0 99px 99px 0" : 0,
+                  }}
+                />
+              ))}
+            </div>
+            <span
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: `${pos}%`,
+                width: 34,
+                height: 34,
+                marginLeft: -17,
+                marginTop: -17,
+                borderRadius: "50%",
+                background: INK,
+                border: "6px solid #fff",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                boxSizing: "border-box",
+              }}
+            />
           </div>
+
+          <div style={{ marginTop: 26, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: 24, color: INK2 }}>
+            <strong style={{ color: INK }}>{sourceLabel}</strong>
+            <span style={{ padding: "4px 14px", borderRadius: 999, background: "#eaf1f0", fontWeight: 700, fontSize: 22 }}>
+              {confidence.toLowerCase()} confidence
+            </span>
+          </div>
+          <p style={{ margin: "6px 0 0", fontSize: 22, color: INK3 }}>{sourceDetail}</p>
         </div>
 
-        {/* 3. PM2.5 Metric Block */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 flex flex-col justify-between">
-            <span className="text-sm font-bold uppercase tracking-wider text-slate-500">
-              PM2.5 Concentration
-            </span>
-            <div className="my-3 flex items-baseline gap-3">
-              <span className="text-7xl font-black tracking-tight text-slate-950 tabular-nums">
-                {Math.round(current.pm25)}
-              </span>
-              <span className="text-2xl font-bold text-slate-500">µg/m³</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-200/70 text-slate-700">
-                Confidence: {conf.toUpperCase()}
-              </span>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-200/70 text-slate-700">
-                Source: {current.source === "station" ? "Station" : "Model"}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 flex flex-col justify-between">
-            <span className="text-sm font-bold uppercase tracking-wider text-slate-500">
-              Measurement Source
-            </span>
-            <div className="my-2 space-y-1">
-              <p className="text-xl font-bold text-slate-900 line-clamp-2">
-                {sourceLabel}
-              </p>
-              <p className="text-sm text-slate-500">
-                Measured at {measuredWall}
-              </p>
-            </div>
-            <p className="text-xs text-slate-400">
-              {current.source === "station"
-                ? "Official regulatory monitoring station via OpenAQ"
-                : "Atmospheric reanalysis via ECMWF Copernicus / Open-Meteo"}
-            </p>
-          </div>
-        </div>
-
-        {/* 4. Actionable Tips Block */}
         {topTips.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="text-base font-bold text-slate-900 tracking-tight">
-                Recommended Actions
-              </span>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Rule-driven advice
-              </span>
-            </div>
-            <ul className="space-y-3">
-              {topTips.map((tip) => {
-                const formatted = formatTip(tip);
-                const [prefix, ...rest] = formatted.split(" — ");
-                const body = rest.join(" — ");
-                return (
-                  <li
-                    key={tip.id}
-                    className="flex items-start gap-4 text-base text-slate-700 leading-snug"
+          <ul style={{ listStyle: "none", margin: "28px 0 0", padding: "0 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+            {topTips.map((tip, i) => {
+              const formatted = formatTip(tip);
+              const [prefix, ...rest] = formatted.split(" — ");
+              const body = rest.join(" — ");
+              return (
+                <li key={tip.id} style={{ display: "flex", alignItems: "flex-start", gap: 20, fontSize: 27, lineHeight: 1.3, color: INK2 }}>
+                  <span
+                    style={{
+                      flex: "0 0 auto",
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
+                      background: "#dcebf5",
+                      color: "#14639a",
+                      display: "grid",
+                      placeItems: "center",
+                      fontWeight: 800,
+                      fontSize: 22,
+                      marginTop: 2,
+                    }}
                   >
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
-                    <div>
-                      {body ? (
-                        <>
-                          <strong className="text-slate-900 font-semibold">{prefix}</strong>
-                          <span className="text-slate-600"> — {body}</span>
-                        </>
-                      ) : (
-                        <span>{formatted}</span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                    {i + 1}
+                  </span>
+                  <span>
+                    {body ? (
+                      <>
+                        <strong style={{ color: INK }}>{prefix}</strong>
+                        <span> — {body}</span>
+                      </>
+                    ) : (
+                      formatted
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
-      {/* 5. Provenance Footer & Verification URL */}
-      <div className="relative z-10 flex items-center justify-between border-t border-slate-200 pt-6 text-sm text-slate-500">
-        <div>
-          <span className="font-semibold text-slate-700">Open-Meteo • OpenAQ • CAMS</span>
-          <span className="mx-2">•</span>
-          <span>Zero mock data</span>
-        </div>
-        <div className="font-mono text-base font-bold text-blue-600">
-          breeze-air.in
-        </div>
+      {/* footer */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "26px 72px 44px",
+          fontSize: 24,
+          color: INK3,
+          flex: "0 0 auto",
+        }}
+      >
+        <span>
+          As of <strong style={{ color: INK2 }}>{formatAsOf(nowMs, data.location.utcOffsetSeconds)}</strong> · general guidance, not medical advice
+        </span>
+        <span style={{ fontWeight: 800, color: "#14639a", fontSize: 26 }}>{host}</span>
       </div>
     </div>
   );

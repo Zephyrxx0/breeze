@@ -1,43 +1,44 @@
-import { Sparkles } from "lucide-react";
-import type { BestWindow } from "@breeze/core";
+import { Sunrise } from "lucide-react";
+import { wallAddHours, type BestWindow } from "@breeze/core";
+import { wallToHour } from "../lib/format";
 
 interface BestWindowChipProps {
   window: BestWindow | null;
 }
 
+/** Hidden by design when there is no window ≥ 15% cleaner than average (PRD §7.4). */
 export function BestWindowChip({ window }: BestWindowChipProps) {
   if (!window) return null;
 
-  const startFormatted = formatTime(window.startWall);
-  const endFormatted = formatTime(window.endWall);
+  // endWall is the last hour *inside* the window, so the block finishes an hour later
+  const startFormatted = wallToHour(window.startWall);
+  const endFormatted = wallToHour(wallAddHours(window.endWall, 1));
   const isPoorOrWorse = window.meanPm25 >= 91;
 
   return (
-    <div className="w-full bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
-      <div className="p-2 bg-blue-600 text-white rounded-xl shrink-0 mt-0.5">
-        <Sparkles className="w-4 h-4" />
-      </div>
-      <div className="space-y-1 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-blue-950">Cleanest 3-Hour Window</span>
-          <span className="text-xs font-semibold px-2 py-0.5 bg-blue-200/80 text-blue-900 rounded-full">
+    <div className="card relative flex items-center gap-4 overflow-hidden p-5 sm:p-7">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-10 -top-10 h-36 w-36 rounded-full bg-accent/15 blur-2xl"
+      />
+      <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent text-accent-ink shadow-[0_8px_20px_-8px_var(--accent)]">
+        <Sunrise className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <div className="relative min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <h3 className="text-sm font-bold tracking-tight text-ink">Cleanest 3-Hour Window</h3>
+          <span className="rounded-full bg-go/15 px-2.5 py-0.5 text-xs font-bold text-[#0b6b52] dark:text-[#5fe0b9]">
             {Math.round(window.improvementPct * 100)}% lower
           </span>
         </div>
-        <p className="text-blue-900 text-xs sm:text-sm leading-relaxed">
-          {startFormatted} to {endFormatted} (averaging {Math.round(window.meanPm25)} µg/m³)
+        <p className="font-display text-[1.9rem] leading-none tracking-tight text-ink">
+          {startFormatted} <span className="text-ink-3">→</span> {endFormatted}
+        </p>
+        <p className="text-xs leading-relaxed text-ink-2">
+          Averaging {Math.round(window.meanPm25)} µg/m³ over the next 24 hours
           {isPoorOrWorse && " — note that levels remain elevated."}
         </p>
       </div>
     </div>
   );
-}
-
-function formatTime(wallStr: string): string {
-  // "YYYY-MM-DDTHH:MM" -> "H AM/PM"
-  const hourNum = parseInt(wallStr.slice(11, 13), 10);
-  if (hourNum === 0) return "12 AM";
-  if (hourNum < 12) return `${hourNum} AM`;
-  if (hourNum === 12) return "12 PM";
-  return `${hourNum - 12} PM`;
 }

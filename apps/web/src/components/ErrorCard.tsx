@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { CloudOff, RefreshCw } from "lucide-react";
 
 interface ErrorCardProps {
   onRetry: () => void;
@@ -12,25 +12,22 @@ export function ErrorCard({
   message = "Live upstream air data is temporarily unavailable. Missing data is shown honestly rather than fabricated.",
 }: ErrorCardProps) {
   return (
-    <div className="w-full bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 text-center shadow-xs space-y-4">
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-700 mx-auto">
-        <AlertTriangle className="w-6 h-6" />
+    <div className="card mx-auto max-w-xl space-y-5 p-8 text-center sm:p-10">
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-care/20 text-[#8a5a00] dark:text-[#ffd27a]">
+        <CloudOff className="h-7 w-7" aria-hidden="true" />
       </div>
-      <div className="space-y-1.5 max-w-md mx-auto">
-        <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-        <p className="text-sm text-slate-600 leading-relaxed">{message}</p>
+      <div className="mx-auto max-w-md space-y-2">
+        <h2 className="font-display text-3xl text-ink">{title}</h2>
+        <p className="text-sm leading-relaxed text-ink-2">{message}</p>
       </div>
-      <div>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          <span>Retry</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-canvas transition hover:opacity-90 active:scale-[0.97]"
+      >
+        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+        <span>Retry</span>
+      </button>
     </div>
   );
 }
-
