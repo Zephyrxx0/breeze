@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Search, MapPin, X } from "lucide-react";
+import { Search, MapPin, X, Bookmark } from "lucide-react";
 import { searchPlaces, type GeocodeResult } from "../lib/geocode";
 
 interface SearchBoxProps {
@@ -8,6 +8,8 @@ interface SearchBoxProps {
   errorMessage?: string | null;
   onClearError?: () => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 }
 
 export function SearchBox({
@@ -16,6 +18,8 @@ export function SearchBox({
   errorMessage,
   onClearError,
   inputRef,
+  isSaved,
+  onToggleSave,
 }: SearchBoxProps) {
   const [query, setQuery] = useState(currentPlace);
   const [results, setResults] = useState<GeocodeResult[]>([]);
@@ -111,7 +115,7 @@ export function SearchBox({
           value={query}
           aria-label="Search city or town in India"
           placeholder="Search place in India..."
-          className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all font-medium text-base"
+          className="w-full pl-11 pr-18 py-3 bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all font-medium text-base"
           onFocus={() => {
             setQuery("");
             setIsOpen(true);
@@ -123,20 +127,37 @@ export function SearchBox({
           }}
           onKeyDown={handleKeyDown}
         />
-        {query && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => {
-              setQuery("");
-              setResults([]);
-              activeInputRef.current?.focus();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setQuery("");
+                setResults([]);
+                activeInputRef.current?.focus();
+              }}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {onToggleSave && (
+            <button
+              type="button"
+              aria-label={isSaved ? "Remove from saved places" : "Save this place"}
+              data-testid="bookmark-place-button"
+              onClick={onToggleSave}
+              className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                isSaved
+                  ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600" : ""}`} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Geolocation / bounds inline error banner */}

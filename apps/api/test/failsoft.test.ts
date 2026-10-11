@@ -89,7 +89,7 @@ describe("fail-soft orchestration & degradation", () => {
             },
           })
         );
-      } else if (req.url?.includes("/locations?")) {
+      } else if (req.url?.includes("/locations") && !req.url?.includes("/latest")) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -103,7 +103,7 @@ describe("fail-soft orchestration & degradation", () => {
             ],
           })
         );
-      } else if (req.url?.includes("/locations/1/latest")) {
+      } else if (req.url?.includes("/locations/1/latest") || req.url?.includes("/latest")) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -111,7 +111,7 @@ describe("fail-soft orchestration & degradation", () => {
               {
                 sensorsId: 10,
                 value: 75,
-                datetime: { utc: "2026-10-11T11:50:00Z" },
+                datetime: { utc: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
               },
             ],
           })

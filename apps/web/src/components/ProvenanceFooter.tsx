@@ -2,6 +2,7 @@ import { wallFromInstant, type AssessResponse } from "@breeze/core";
 
 interface ProvenanceFooterProps {
   data: AssessResponse;
+  onOpenAbout?: () => void;
 }
 
 function formatWallTime(isoUtc?: string, utcOffsetSeconds: number = 0): string {
@@ -20,7 +21,7 @@ function formatWallTime(isoUtc?: string, utcOffsetSeconds: number = 0): string {
   }
 }
 
-export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
+export function ProvenanceFooter({ data, onOpenAbout }: ProvenanceFooterProps) {
   const offset = data.location.utcOffsetSeconds;
   const updatedTime = formatWallTime(data.generatedAt, offset);
 
@@ -95,6 +96,20 @@ export function ProvenanceFooter({ data }: ProvenanceFooterProps) {
           .
         </p>
       </div>
+
+      {/* About & Explanations trigger link */}
+      {onOpenAbout && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={onOpenAbout}
+            data-testid="footer-open-about-button"
+            className="font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-sm cursor-pointer"
+          >
+            Learn how Breeze measures air quality &amp; data sources &rarr;
+          </button>
+        </div>
+      )}
 
       {/* Medical disclaimer */}
       <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertCircle, AlertTriangle, Link as LinkIcon, Share2 } from "lucide-react";
 import {
   categoryFor,
   verdictFor,
@@ -15,6 +15,9 @@ interface VerdictHeroProps {
   profile?: "standard" | "sensitive";
   onProfileChange?: (profile: "standard" | "sensitive") => void;
   onAnnounce?: (message: string) => void;
+  onCopyLink?: () => void;
+  onShareCard?: () => void;
+  isSharing?: boolean;
 }
 
 const VERDICT_THEMES: Record<
@@ -55,6 +58,9 @@ export function VerdictHero({
   profile = "standard",
   onProfileChange,
   onAnnounce,
+  onCopyLink,
+  onShareCard,
+  isSharing,
 }: VerdictHeroProps) {
   const [activeTab, setActiveTab] = useState<"today" | "tomorrow">("today");
 
@@ -275,6 +281,33 @@ export function VerdictHero({
       <div className="space-y-1.5 pt-1 border-t border-slate-200/60 text-sm text-slate-700 leading-relaxed">
         <p className="font-semibold text-slate-900">{activeReasons[0]}</p>
         <p className="text-slate-600">{activeReasons[1]}</p>
+      </div>
+
+      {/* Share & Copy Link Actions */}
+      <div className="pt-2 flex items-center gap-2 border-t border-slate-200/40">
+        {onCopyLink && (
+          <button
+            type="button"
+            onClick={onCopyLink}
+            data-testid="copy-link-button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/80 shadow-2xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-98"
+          >
+            <LinkIcon className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+            <span>Copy Link</span>
+          </button>
+        )}
+        {onShareCard && (
+          <button
+            type="button"
+            onClick={onShareCard}
+            disabled={isSharing}
+            data-testid="share-card-button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 active:scale-98"
+          >
+            <Share2 className="w-3.5 h-3.5 text-blue-100" aria-hidden="true" />
+            <span>{isSharing ? "Generating..." : "Share Card"}</span>
+          </button>
+        )}
       </div>
     </div>
   );

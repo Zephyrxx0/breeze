@@ -7,10 +7,15 @@ import {
   wallFromInstant,
   type EffectivePm25,
 } from "@breeze/core";
+import { Info } from "lucide-react";
 import { useLocationParams } from "./hooks/useLocationParams";
 import { useAssessment } from "./hooks/useAssessment";
+import { useSavedPlaces } from "./hooks/useSavedPlaces";
 import { SearchBox } from "./components/SearchBox";
 import { LocationButton } from "./components/LocationButton";
+import { SavedPlacesBar } from "./components/SavedPlacesBar";
+import { AboutModal } from "./components/AboutModal";
+import { Toast } from "./components/Toast";
 import { Skeletons } from "./components/Skeletons";
 import { ErrorCard } from "./components/ErrorCard";
 import { VerdictHero } from "./components/VerdictHero";
@@ -26,7 +31,42 @@ export function MainView() {
   const { lat, lon, name, isOutOfCoverage, setLocation } = useLocationParams();
   const [geoError, setGeoError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState<string>("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { places, isCurrentSaved, toggleSaveCurrent, removePlace } = useSavedPlaces({
+    lat,
+    lon,
+    name,
+  });
+
+  const handleBookmarkToggle = () => {
+    const res = toggleSaveCurrent();
+    if (res.action === "saved") {
+      setToastMessage(`Saved ${name} to quick places`);
+    } else if (res.action === "removed") {
+      setToastMessage(`Removed ${name} from quick places`);
+    } else if (res.action === "limit_reached") {
+      setToastMessage("Maximum 5 places saved. Remove one to save another.");
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window === "undefined") return;
+    const roundedLat = Math.round(lat * 100) / 100;
+    const roundedLon = Math.round(lon * 100) / 100;
+    const url = `${window.location.origin}/?lat=${roundedLat}&lon=${roundedLon}&n=${encodeURIComponent(name)}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setToastMessage("Link copied to clipboard!");
+        setAnnouncement("Link copied to clipboard!");
+      })
+      .catch(() => {
+        setToastMessage("Could not copy link");
+      });
+  };
 
   // Profile state: hydrated synchronously from localStorage, strictly validated
   const [profile, setProfile] = useState<"standard" | "sensitive">(() => {
@@ -120,7 +160,18 @@ export function MainView() {
           <span className="text-2xl font-black tracking-tight text-blue-600">Breeze</span>
           <span className="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 rounded-full">India</span>
         </div>
-        <div className="text-xs text-slate-500 font-medium">Live air verdict</div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            data-testid="header-about-button"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer transition-colors"
+          >
+            <Info className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
+            <span>About</span>
+          </button>
+          <div className="text-xs text-slate-400 font-medium hidden sm:inline">Live air verdict</div>
+        </div>
       </header>
 
       <main className="w-full max-w-xl px-4 py-3 space-y-4 flex-1">
@@ -136,17 +187,30 @@ export function MainView() {
         </div>
 
         {/* Search & Location Bar */}
-        <div className="flex items-center gap-2">
-          <SearchBox
-            currentPlace={name}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <SearchBox
+              currentPlace={name}
+              onSelectPlace={handleSelectPlace}
+              errorMessage={geoError || (isOutOfCoverage ? "Breeze covers India only (lat 6–38, lon 68–98.5)." : null)}
+              onClearError={() => setGeoError(null)}
+              inputRef={searchInputRef}
+              isSaved={isCurrentSaved}
+              onToggleSave={handleBookmarkToggle}
+            />
+            <LocationButton
+              onLocationFound={handleSelectPlace}
+              onError={handleGeoError}
+            />
+          </div>
+
+          {/* Saved Places Chips Bar */}
+          <SavedPlacesBar
+            places={places}
+            currentLat={lat}
+            currentLon={lon}
             onSelectPlace={handleSelectPlace}
-            errorMessage={geoError || (isOutOfCoverage ? "Breeze covers India only (lat 6–38, lon 68–98.5)." : null)}
-            onClearError={() => setGeoError(null)}
-            inputRef={searchInputRef}
-          />
-          <LocationButton
-            onLocationFound={handleSelectPlace}
-            onError={handleGeoError}
+            onRemovePlace={removePlace}
           />
         </div>
 
@@ -169,6 +233,7 @@ export function MainView() {
               profile={profile}
               onProfileChange={handleProfileChange}
               onAnnounce={handleAnnounce}
+              onCopyLink={handleCopyLink}
             />
             {data.air.model?.hourly && data.air.model.hourly.length > 0 && (
               <ForecastChart
@@ -183,10 +248,25 @@ export function MainView() {
             {data.weather && data.weather.status !== "unavailable" && (
               <WeatherStrip weather={data.weather} />
             )}
-            <ProvenanceFooter data={data} />
+            <ProvenanceFooter
+              data={data}
+              onOpenAbout={() => setIsAboutOpen(true)}
+            />
           </div>
         )}
       </main>
+
+      {/* Floating Feedback Toast */}
+      <Toast
+        message={toastMessage}
+        onDismiss={() => setToastMessage(null)}
+      />
+
+      {/* About & Data Sources Modal */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+      />
     </div>
   );
 }
