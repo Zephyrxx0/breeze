@@ -6,7 +6,8 @@
     "dev": "pnpm -r --parallel run dev",
     "test": "vitest run",
     "test:tz": "TZ=UTC vitest run && TZ=Asia/Kolkata vitest run",
-    "smoke": "tsx scripts/smoke-live.ts"
+    "smoke": "tsx scripts/smoke-live.ts",
+    "verify:deploy": "tsx scripts/verify-deploy.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.3",
