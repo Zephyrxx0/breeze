@@ -24,7 +24,6 @@ Resources:
         - arm64
       MemorySize: 512
       Timeout: 10
-      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           OPENAQ_API_KEY: !Ref OpenAqApiKey
@@ -33,7 +32,6 @@ Resources:
         Cors:
           AllowOrigins:
             - !Ref AllowedOrigin
-            - "http://localhost:5173"
           AllowMethods:
             - GET
 
